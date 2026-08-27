@@ -1,0 +1,59 @@
+bank_ref,date,description,debit,credit,balance,currency
+TXN00048-B,2026-07-08,Dunzo Enterprise - SaaS subscription (part 2),22779.16,0,-1790543.34,INR
+TXN00013,2026-07-04,Dunzo Enterprise - Office supplies,72774.35,0,-147813.92,INR
+TXN00004,2026-07-01,SendGrid - Marketing tools,43202.52,0,353822.58,INR
+TXN00028,2026-07-25,Swiggy Business - Cloud infrastructure,63949.17,0,-860389.78,INR
+TXN00023,2026-07-14,Cloudflare Inc - Logistics,63622.67,0,-616937.7,INR
+TXN00029,2026-07-15,AWS India Pvt Ltd - Office supplies,37237.66,0,-897627.44,INR
+TXN00042,2026-07-06,Urban Company - Logistics,16589.64,0,-1523978.0,INR
+TXN00022,2026-07-24,SendGrid - Accounting,12298.76,0,-553315.03,INR
+TXN00024,2026-07-05,Twilio India - Legal fees,19032.6,0,-635970.3,INR
+TXN00002,2026-07-04,SendGrid - Cloud infrastructure,12290.95,0,433177.49,INR
+TXN00019,2026-07-13,GitHub Inc - Cloud infrastructure,68526.37,0,-429425.37,INR
+TXN00053,2026-07-18,Slack Technologies - SaaS subscription (DUP),40788.63,0,-1955879.2,INR
+TXN00049-B,2026-07-10,Shopify India - Office supplies (part 2),35292.81,0,-1874301.94,INR
+TXN00045,2026-07-05,NEFT/INDIAMART IN,45816.15,0,-1671791.78,INR
+TXN00011,2026-07-20,Urban Company - IT hardware,70584.69,0,-15003.25,INR
+TXN00047-B,2026-07-19,AWS India Pvt Ltd - Cloud infrastructure (part 2),35225.19,0,-1749006.66,INR
+TXN00036,2026-07-25,Notion Labs - Office supplies,79490.76,0,-1341775.4,INR
+TXN00033,2026-07-26,Canva Pty Ltd - Marketing tools,78888.02,0,-1174185.43,INR
+TXN00015,2026-07-09,Razorpay Software - IT hardware,18203.34,0,-220232.6,INR
+TXN00053,2026-07-17,Slack Technologies - SaaS subscription,40788.63,0,-1915090.57,INR
+TXN00010,2026-07-13,Razorpay Software - Accounting,82728.28,0,55581.44,INR
+TXN00025,2026-07-04,Freshworks Inc - Payment processing,64363.59,0,-700333.89,INR
+TXN00008,2026-07-12,Urban Company - IT hardware,32603.86,0,207012.06,INR
+TXN00031,2026-07-05,Urban Company - Payment processing,51957.98,0,-1014471.23,INR
+TXN00012,2026-07-02,Figma Inc - Office supplies,60036.32,0,-75039.57,INR
+TXN00035,2026-07-06,GitHub Inc - Accounting,80296.86,0,-1262284.64,INR
+TXN00054,2026-07-07,Razorpay Software - IT hardware (DUP),7269.42,0,-1970418.04,INR
+TXN00041,2026-07-26,Figma Inc - Legal fees,46065.27,0,-1507388.36,INR
+TXN00032,2026-07-17,AWS India Pvt Ltd - IT hardware,80826.18,0,-1095297.41,INR
+TXN00018,2026-07-25,Google Cloud India - Marketing tools,71720.99,0,-360899.0,INR
+TXN00054,2026-07-06,Razorpay Software - IT hardware,7269.42,0,-1963148.62,INR
+TXN00007,2026-07-25,Swiggy Business - Cloud infrastructure,13638.02,0,239615.92,INR
+TXN00048-A,2026-07-07,Dunzo Enterprise - SaaS subscription (part 1),18757.52,0,-1767764.18,INR
+TXN00001,2026-07-01,GitHub Inc - Marketing tools,54531.56,0,445468.44,INR
+TXN00005,2026-07-15,Cloudflare Inc - Office supplies,35949.42,0,317873.16,INR
+TXN00044,2026-07-26,Zoho_Corporation_-,62034.05,0,-1625975.63,INR
+TXN00030,2026-07-17,Zoho Corporation - Office supplies,64885.81,0,-962513.25,INR
+TXN00020,2026-07-19,Swiggy Business - Marketing tools,77660.0,0,-507085.37,INR
+TXN00009,2026-07-24,Shopify India - Accounting,68702.34,0,138309.72,INR
+TXN00026,2026-07-13,Dunzo Enterprise - IT hardware,50896.56,0,-751230.45,INR
+TXN00046,2026-07-03,SHOPIFY INDIA - ACCO,21608.64,0,-1693400.42,INR
+TXN00055,2026-07-09,Dunzo Enterprise - Cloud infrastructure (DUP),57555.46,0,-2085528.96,INR
+TXN00047-A,2026-07-18,AWS India Pvt Ltd - Cloud infrastructure (part 1),20381.05,0,-1713781.47,INR
+TXN00049-A,2026-07-09,Shopify India - Office supplies (part 1),48465.79,0,-1839009.13,INR
+TXN00014,2026-07-12,Slack Technologies - Contract labour,54215.34,0,-202029.26,INR
+TXN00017,2026-07-21,SendGrid - Marketing tools,23310.59,0,-289178.01,INR
+TXN00021,2026-07-21,Shopify India - Payment processing,33930.9,0,-541016.27,INR
+TXN00034,2026-07-16,Razorpay Software - Accounting,7802.35,0,-1181987.78,INR
+TXN00037,2026-07-17,Shopify India - Cloud infrastructure,37632.19,0,-1379407.59,INR
+TXN00055,2026-07-08,Dunzo Enterprise - Cloud infrastructure,57555.46,0,-2027973.5,INR
+TXN00043,2026-07-24,NEFT/GOOGLE CLOUD,39963.58,0,-1563941.58,INR
+TXN00027,2026-07-18,AWS India Pvt Ltd - Cloud infrastructure,45210.16,0,-796440.61,INR
+TXN00006,2026-07-06,IndiaMart InterMESH - Contract labour,64619.22,0,253253.94,INR
+TXN00040,2026-07-04,GitHub Inc - Legal fees,73139.19,0,-1461323.09,INR
+TXN00003,2026-07-01,Razorpay Software - Marketing tools,36152.39,0,397025.1,INR
+TXN00039,2026-07-22,Figma Inc - Cloud infrastructure,6498.92,0,-1388183.9,INR
+TXN00038,2026-07-19,Cloudflare Inc - Marketing tools,2277.39,0,-1381684.98,INR
+TXN00016,2026-07-08,Slack Technologies - Legal fees,45634.82,0,-265867.42,INR

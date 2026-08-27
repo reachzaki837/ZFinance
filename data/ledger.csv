@@ -1,0 +1,56 @@
+ref_id,date,vendor,description,category,amount,currency
+TXN00001,2026-07-01,GitHub Inc,GitHub Inc - Marketing tools,Marketing tools,54531.56,INR
+TXN00002,2026-07-04,SendGrid,SendGrid - Cloud infrastructure,IT hardware,12290.95,INR
+TXN00003,2026-07-01,Razorpay Software,Razorpay Software - Marketing tools,Marketing tools,36152.39,INR
+TXN00004,2026-07-01,SendGrid,SendGrid - Marketing tools,Accounting,43202.52,INR
+TXN00005,2026-07-15,Cloudflare Inc,Cloudflare Inc - Office supplies,SaaS subscription,35949.42,INR
+TXN00006,2026-07-06,IndiaMart InterMESH,IndiaMart InterMESH - Contract labour,Office supplies,64619.22,INR
+TXN00007,2026-07-25,Swiggy Business,Swiggy Business - Cloud infrastructure,Cloud infrastructure,13638.02,INR
+TXN00008,2026-07-12,Urban Company,Urban Company - IT hardware,Office supplies,32603.86,INR
+TXN00009,2026-07-24,Shopify India,Shopify India - Accounting,Cloud infrastructure,68702.34,INR
+TXN00010,2026-07-13,Razorpay Software,Razorpay Software - Accounting,Office supplies,82728.28,INR
+TXN00011,2026-07-20,Urban Company,Urban Company - IT hardware,Marketing tools,70584.69,INR
+TXN00012,2026-07-02,Figma Inc,Figma Inc - Office supplies,Cloud infrastructure,60036.32,INR
+TXN00013,2026-07-04,Dunzo Enterprise,Dunzo Enterprise - Office supplies,Legal fees,72774.35,INR
+TXN00014,2026-07-12,Slack Technologies,Slack Technologies - Contract labour,Contract labour,54215.34,INR
+TXN00015,2026-07-09,Razorpay Software,Razorpay Software - IT hardware,Payment processing,18203.34,INR
+TXN00016,2026-07-08,Slack Technologies,Slack Technologies - Legal fees,Logistics,45634.82,INR
+TXN00017,2026-07-21,SendGrid,SendGrid - Marketing tools,Contract labour,23310.59,INR
+TXN00018,2026-07-25,Google Cloud India,Google Cloud India - Marketing tools,SaaS subscription,71720.99,INR
+TXN00019,2026-07-13,GitHub Inc,GitHub Inc - Cloud infrastructure,Marketing tools,68526.37,INR
+TXN00020,2026-07-19,Swiggy Business,Swiggy Business - Marketing tools,Legal fees,77660.0,INR
+TXN00021,2026-07-21,Shopify India,Shopify India - Payment processing,Office supplies,33930.9,INR
+TXN00022,2026-07-24,SendGrid,SendGrid - Accounting,Office supplies,12298.76,INR
+TXN00023,2026-07-14,Cloudflare Inc,Cloudflare Inc - Logistics,Contract labour,63622.67,INR
+TXN00024,2026-07-05,Twilio India,Twilio India - Legal fees,Cloud infrastructure,19032.6,INR
+TXN00025,2026-07-04,Freshworks Inc,Freshworks Inc - Payment processing,Logistics,64363.59,INR
+TXN00026,2026-07-13,Dunzo Enterprise,Dunzo Enterprise - IT hardware,Legal fees,50896.56,INR
+TXN00027,2026-07-18,AWS India Pvt Ltd,AWS India Pvt Ltd - Cloud infrastructure,Accounting,45210.16,INR
+TXN00028,2026-07-25,Swiggy Business,Swiggy Business - Cloud infrastructure,Office supplies,63949.17,INR
+TXN00029,2026-07-15,AWS India Pvt Ltd,AWS India Pvt Ltd - Office supplies,Accounting,37237.66,INR
+TXN00030,2026-07-17,Zoho Corporation,Zoho Corporation - Office supplies,Accounting,64885.81,INR
+TXN00031,2026-07-05,Urban Company,Urban Company - Payment processing,Accounting,51957.98,INR
+TXN00032,2026-07-17,AWS India Pvt Ltd,AWS India Pvt Ltd - IT hardware,Contract labour,81070.73,INR
+TXN00033,2026-07-26,Canva Pty Ltd,Canva Pty Ltd - Marketing tools,SaaS subscription,79008.83,INR
+TXN00034,2026-07-16,Razorpay Software,Razorpay Software - Accounting,Payment processing,7737.72,INR
+TXN00035,2026-07-06,GitHub Inc,GitHub Inc - Accounting,IT hardware,80508.71,INR
+TXN00036,2026-07-25,Notion Labs,Notion Labs - Office supplies,Logistics,78993.19,INR
+TXN00037,2026-07-17,Shopify India,Shopify India - Cloud infrastructure,Marketing tools,37519.46,INR
+TXN00038,2026-07-18,Cloudflare Inc,Cloudflare Inc - Marketing tools,SaaS subscription,2277.39,INR
+TXN00039,2026-07-21,Figma Inc,Figma Inc - Cloud infrastructure,SaaS subscription,6498.92,INR
+TXN00040,2026-07-03,GitHub Inc,GitHub Inc - Legal fees,Marketing tools,73139.19,INR
+TXN00041,2026-07-24,Figma Inc,Figma Inc - Legal fees,Logistics,46065.27,INR
+TXN00042,2026-07-04,Urban Company,Urban Company - Logistics,Logistics,16589.64,INR
+TXN00043,2026-07-24,Google Cloud India,Google Cloud India - Cloud infrastructure,SaaS subscription,39963.58,INR
+TXN00044,2026-07-26,Zoho Corporation,Zoho Corporation - Marketing tools,Marketing tools,62034.05,INR
+TXN00045,2026-07-05,IndiaMart InterMESH,IndiaMart InterMESH - Payment processing,Office supplies,45816.15,INR
+TXN00046,2026-07-03,Shopify India,Shopify India - Accounting,Cloud infrastructure,21608.64,INR
+TXN00047,2026-07-18,AWS India Pvt Ltd,AWS India Pvt Ltd - Cloud infrastructure,Marketing tools,55606.24,INR
+TXN00048,2026-07-07,Dunzo Enterprise,Dunzo Enterprise - SaaS subscription,Payment processing,41536.68,INR
+TXN00049,2026-07-09,Shopify India,Shopify India - Office supplies,Logistics,83758.6,INR
+TXN00050,2026-07-26,SendGrid,SendGrid - Legal fees,Payment processing,62227.7,INR
+TXN00051,2026-07-07,Google Cloud India,Google Cloud India - IT hardware,Accounting,16546.37,INR
+TXN00052,2026-07-11,Google Cloud India,Google Cloud India - SaaS subscription,IT hardware,5650.91,INR
+TXN00053,2026-07-17,Slack Technologies,Slack Technologies - SaaS subscription,Accounting,40788.63,INR
+TXN00054,2026-07-06,Razorpay Software,Razorpay Software - IT hardware,Cloud infrastructure,7269.42,INR
+TXN00055,2026-07-08,Dunzo Enterprise,Dunzo Enterprise - Cloud infrastructure,IT hardware,57555.46,INR
