@@ -1,5 +1,5 @@
 /.venv
-.env
+frontend/node_modules/**
 # Environment files
 .env
 **/.env
