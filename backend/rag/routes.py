@@ -93,6 +93,12 @@ async def trend(business_id: str):
     return {"business_id": business_id, "data": rag.get_weekly_totals(business_id)}
 
 
+@router.get("/transactions/{business_id}")
+async def transactions(business_id: str, week: str | None = None):
+    """Raw transaction rows for the Transactions table. Optional ?week= filter."""
+    return {"business_id": business_id, "transactions": rag.get_transactions(business_id, week)}
+
+
 @router.delete("/weeks/{business_id}/{week}")
 async def delete_week(business_id: str, week: str):
     rag.delete_week(business_id, week)

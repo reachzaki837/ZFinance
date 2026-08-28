@@ -89,3 +89,9 @@ export async function ingestCSV(file, week, businessId = BUSINESS_ID) {
   }
   return response.json();
 }
+
+export async function getTransactions(businessId = BUSINESS_ID, week = null) {
+  const qs = week ? `?week=${week}` : "";
+  const data = await apiFetch(`/api/rag/transactions/${businessId}${qs}`);
+  return data.transactions;
+}

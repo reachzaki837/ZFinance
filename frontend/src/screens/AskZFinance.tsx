@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { SendHorizonal, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { chatResponses } from "@/data/mockData";
+import { askQuestion } from "@/lib/api";
 
 interface Message {
   id: string;
@@ -16,9 +16,6 @@ const SUGGESTIONS = [
   "Are there any anomalies I should worry about?",
 ];
 
-const FALLBACK_RESPONSE =
-  "Based on your financial data for the current week, everything looks within normal parameters. Revenue is trending upward at 12.4% week-over-week, and expense growth remains controlled at 3.1%. Would you like a deeper dive into any specific category?";
-
 export function AskZFinance() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -30,18 +27,28 @@ export function AskZFinance() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typing]);
 
-  function sendMessage(text: string) {
+  async function sendMessage(text: string) {
     if (!text.trim() || typing) return;
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: text.trim() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setTyping(true);
-    setTimeout(() => {
-      const response = chatResponses[text.trim()] || FALLBACK_RESPONSE;
-      const aiMsg: Message = { id: (Date.now() + 1).toString(), role: "ai", content: response };
+
+    try {
+      const answer = await askQuestion(text.trim());
+      const aiMsg: Message = { id: (Date.now() + 1).toString(), role: "ai", content: answer };
       setMessages((prev) => [...prev, aiMsg]);
+    } catch (err) {
+      console.error("Failed to get answer:", err);
+      const errorMsg: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "ai",
+        content: "Sorry, I couldn't reach the backend just now. Make sure the server is running and data has been ingested.",
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    } finally {
       setTyping(false);
-    }, 1500);
+    }
   }
 
   const isEmpty = messages.length === 0;

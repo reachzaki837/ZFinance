@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Save, Trash2, AlertTriangle } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { ingestedWeeks } from "@/data/mockData";
+import { Skeleton } from "@/components/ui/Skeleton";
+import { getWeeks, deleteWeek, BUSINESS_ID } from "@/lib/api";
 
 export function Settings() {
   const [businessName, setBusinessName] = useState("Patel Enterprises Pvt. Ltd.");
@@ -12,8 +13,28 @@ export function Settings() {
   const [amountTolerance, setAmountTolerance] = useState(500);
   const [dateTolerance, setDateTolerance] = useState(3);
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.75);
-  const [weeks, setWeeks] = useState(ingestedWeeks);
+
+  const [weeks, setWeeks] = useState<string[]>([]);
+  const [loadingWeeks, setLoadingWeeks] = useState(true);
+  const [weeksError, setWeeksError] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  function loadWeeks() {
+    setLoadingWeeks(true);
+    setWeeksError(null);
+    getWeeks()
+      .then((w: string[]) => setWeeks(w))
+      .catch((err) => {
+        console.error("Failed to fetch weeks:", err);
+        setWeeksError("Could not load ingested weeks");
+      })
+      .finally(() => setLoadingWeeks(false));
+  }
+
+  useEffect(() => {
+    loadWeeks();
+  }, []);
 
   function handleSave() {
     setSaved(true);
@@ -24,10 +45,18 @@ export function Settings() {
     setDeleteTarget(week);
   }
 
-  function doDelete() {
+  async function doDelete() {
     if (!deleteTarget) return;
-    setWeeks((prev) => prev.filter((w) => w.week !== deleteTarget));
-    setDeleteTarget(null);
+    setDeleting(true);
+    try {
+      await deleteWeek(deleteTarget);
+      setWeeks((prev) => prev.filter((w) => w !== deleteTarget));
+    } catch (err) {
+      console.error("Failed to delete week:", err);
+    } finally {
+      setDeleting(false);
+      setDeleteTarget(null);
+    }
   }
 
   return (
@@ -44,8 +73,10 @@ export function Settings() {
               This will permanently remove all transaction data for <strong className="text-[var(--color-ink)]">{deleteTarget}</strong>. This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
-              <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
-              <Button variant="danger" onClick={doDelete}>Delete</Button>
+              <Button variant="outline" onClick={() => setDeleteTarget(null)} disabled={deleting}>Cancel</Button>
+              <Button variant="danger" onClick={doDelete} disabled={deleting}>
+                {deleting ? "Deleting…" : "Delete"}
+              </Button>
             </div>
           </div>
         </div>
@@ -63,7 +94,7 @@ export function Settings() {
                 Business ID
               </label>
               <p className="text-sm font-[var(--font-mono)] text-[var(--color-muted)] bg-[var(--color-border)] px-3 py-2 rounded-lg">
-                BIZ-00142
+                {BUSINESS_ID}
               </p>
             </div>
             <div>
@@ -101,10 +132,13 @@ export function Settings() {
                 onChange={(e) => setLlmModel(e.target.value)}
                 className="w-full text-sm px-3 py-2 rounded-lg bg-[var(--color-border)] text-[var(--color-ink)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-all font-[var(--font-body)]"
               >
-                {["llama3.1", "phi4-mini", "mistral", "groq-llama3-8b"].map((m) => (
+                {["llama3.1", "phi4-mini", "mistral", "openai/gpt-oss-20b"].map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
+              <p className="text-[10px] text-[var(--color-muted)] mt-1.5">
+                Backend currently uses openai/gpt-oss-20b via Groq. Changing this here is cosmetic until Settings is wired to update the backend .env.
+              </p>
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
@@ -195,6 +229,9 @@ export function Settings() {
                 <span>1.00 (exact only)</span>
               </div>
             </div>
+            <p className="text-[10px] text-[var(--color-muted)]">
+              These values become live once the Reconciliation agent (Step 4) is wired to read them from the backend.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -205,20 +242,27 @@ export function Settings() {
           <span className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">Data Management</span>
         </CardHeader>
         <CardContent>
-          {weeks.length === 0 ? (
+          {loadingWeeks ? (
+            <div className="space-y-2">
+              <Skeleton className="h-14 w-full rounded-xl" />
+              <Skeleton className="h-14 w-full rounded-xl" />
+            </div>
+          ) : weeksError ? (
+            <p className="text-sm text-[var(--color-danger)] py-4 text-center">{weeksError}</p>
+          ) : weeks.length === 0 ? (
             <p className="text-sm text-[var(--color-muted)] py-4 text-center">No ingested data found.</p>
           ) : (
             <div className="space-y-2">
-              {weeks.map((w) => (
+              {weeks.map((week) => (
                 <div
-                  key={w.week}
+                  key={week}
                   className="flex items-center justify-between py-3 px-4 rounded-xl bg-[var(--color-border)]"
                 >
                   <div>
-                    <p className="text-sm font-medium font-[var(--font-display)] text-[var(--color-ink)]">{w.week}</p>
-                    <p className="text-xs text-[var(--color-muted)] font-[var(--font-mono)]">{w.txCount} transactions</p>
+                    <p className="text-sm font-medium font-[var(--font-display)] text-[var(--color-ink)]">{week}</p>
+                    <p className="text-xs text-[var(--color-muted)] font-[var(--font-mono)]">Ingested</p>
                   </div>
-                  <Button variant="danger" size="sm" onClick={() => confirmDelete(w.week)}>
+                  <Button variant="danger" size="sm" onClick={() => confirmDelete(week)}>
                     <Trash2 size={12} />
                     Delete
                   </Button>

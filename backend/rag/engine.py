@@ -78,6 +78,7 @@ class ZFinanceRAG:
 
         # Build category history for anomaly detection
         df = df.copy()
+        df["date"] = pd.to_datetime(df["date"])
         df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0)
         current_totals = {}
         if "category" in df.columns:
@@ -100,11 +101,30 @@ class ZFinanceRAG:
                 "is_critical": str(a["is_critical"]),
             })
 
+        # Store each raw transaction row too, so the Transactions table can list them
+        tx_chunks, tx_ids, tx_metas = [], [], []
+        for i, row in df.reset_index(drop=True).iterrows():
+            date_str = row["date"].strftime("%Y-%m-%d")
+            category = str(row.get("category", ""))
+            description = str(row.get("description", category or "transaction"))
+            amount = float(row["amount"])
+            tx_chunks.append(f"{date_str} — {description} ({category}): ₹{amount:,.2f}")
+            tx_ids.append(f"{business_id}_{week}_tx_{i}")
+            tx_metas.append({
+                "week": week, "type": "transaction", "business_id": business_id,
+                "date": date_str, "category": category, "description": description,
+                "amount": str(amount),
+            })
+
+        all_chunks += tx_chunks
+        ids += tx_ids
+        metadatas += tx_metas
+
         col = self._collection(business_id)
         col.upsert(documents=all_chunks, metadatas=metadatas, ids=ids)
 
-        log.info("Ingested %d chunks (%d anomalies) for %s / %s",
-                  len(all_chunks), len(anomalies), business_id, week)
+        log.info("Ingested %d chunks (%d transactions, %d anomalies) for %s / %s",
+                  len(all_chunks), len(tx_chunks), len(anomalies), business_id, week)
         return len(all_chunks)
 
     def _get_category_history(self, business_id: str) -> dict[str, list[float]]:
@@ -222,6 +242,33 @@ class ZFinanceRAG:
                 continue
 
         return sorted(by_week.values(), key=lambda x: x["week"])
+
+    def get_transactions(self, business_id: str, week: str | None = None) -> list[dict]:
+        """
+        Return raw transaction rows for the table view.
+        If week is None, returns transactions across all ingested weeks.
+        """
+        col = self._collection(business_id)
+        where = {"type": {"$eq": "transaction"}}
+        if week:
+            where = {"$and": [{"type": {"$eq": "transaction"}}, {"week": {"$eq": week}}]}
+        try:
+            results = col.get(where=where, include=["metadatas"])
+        except Exception:
+            return []
+
+        rows = [
+            {
+                "date": m.get("date"),
+                "description": m.get("description"),
+                "category": m.get("category"),
+                "amount": float(m.get("amount", 0)),
+                "week": m.get("week"),
+            }
+            for m in results.get("metadatas", [])
+        ]
+        rows.sort(key=lambda r: r["date"], reverse=True)
+        return rows
 
     def delete_week(self, business_id: str, week: str) -> None:
         col = self._collection(business_id)
