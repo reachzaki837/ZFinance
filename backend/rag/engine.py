@@ -25,7 +25,7 @@ log = logging.getLogger("zfinance.rag")
 CHROMA_PATH   = os.getenv("CHROMA_PATH", "./chroma_db")
 EMBED_MODEL   = os.getenv("EMBED_MODEL", "all-MiniLM-L6-v2")
 LLM_PROVIDER  = os.getenv("LLM_PROVIDER", "groq")     # "groq" | "ollama"
-LLM_MODEL     = os.getenv("LLM_MODEL", "llama3-8b-8192")
+LLM_MODEL     = os.getenv("LLM_MODEL", "openai/gpt-oss-20b")
 GROQ_API_KEY  = os.getenv("GROQ_API_KEY", "")
 TOP_K         = int(os.getenv("RAG_TOP_K", "10"))
 SIGMA         = float(os.getenv("ANOMALY_SIGMA", "2.5"))
@@ -194,6 +194,34 @@ class ZFinanceRAG:
             return []
         weeks = {m["week"] for m in results.get("metadatas", [])}
         return sorted(weeks)
+
+    def get_weekly_totals(self, business_id: str) -> list[dict]:
+        """
+        Returns [{ week, revenue, expenses }] across all ingested weeks,
+        parsed from the stored summary chunks. Used for the trend chart.
+        """
+        col = self._collection(business_id)
+        try:
+            results = col.get(where={"type": {"$eq": "summary"}}, include=["documents", "metadatas"])
+        except Exception:
+            return []
+
+        by_week: dict[str, dict] = {}
+        for doc, meta in zip(results.get("documents", []), results.get("metadatas", [])):
+            week = meta.get("week")
+            if not week or week in by_week:
+                continue
+            try:
+                after_revenue = doc.split("Revenue ₹")[1]
+                revenue_str, rest = after_revenue.split(", Expenses ₹")
+                expenses_str = rest.split(", Net ₹")[0]
+                revenue = float(revenue_str.replace(",", ""))
+                expenses = float(expenses_str.replace(",", ""))
+                by_week[week] = {"week": week, "revenue": revenue, "expenses": expenses}
+            except (IndexError, ValueError):
+                continue
+
+        return sorted(by_week.values(), key=lambda x: x["week"])
 
     def delete_week(self, business_id: str, week: str) -> None:
         col = self._collection(business_id)

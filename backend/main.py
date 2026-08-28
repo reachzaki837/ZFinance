@@ -11,6 +11,19 @@ Run:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+import os
+
+load_dotenv()   # must run BEFORE importing rag.routes, since rag/engine.py reads env vars at import time
+
+# Diagnostic — confirms the key actually loaded, without printing the real value
+_key = os.getenv("GROQ_API_KEY", "")
+if not _key or _key.startswith("gsk_xxxx"):
+    print("⚠️  WARNING: GROQ_API_KEY is missing or still the placeholder value.")
+    print(f"    Current value length: {len(_key)} chars")
+else:
+    print(f"✓ GROQ_API_KEY loaded ({len(_key)} chars, starts with '{_key[:7]}...')")
+
 from rag.routes import router as rag_router
 
 app = FastAPI(

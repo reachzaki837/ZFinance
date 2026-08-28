@@ -12,7 +12,7 @@ Endpoints matching what the frontend components expect:
 
 import io
 import pandas as pd
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from pydantic import BaseModel
 
 from rag.engine import ZFinanceRAG
@@ -32,13 +32,23 @@ class AskRequest(BaseModel):
 
 
 @router.post("/ingest")
-async def ingest_csv(business_id: str, week: str, file: UploadFile = File(...)):
+async def ingest_csv(
+    business_id: str = Query(...),
+    week: str = Query(...),
+    file: UploadFile = File(...),
+):
     if not file.filename.endswith(".csv"):
         raise HTTPException(400, "Only CSV files are supported.")
 
     contents = await file.read()
     try:
         df = pd.read_csv(io.BytesIO(contents))
+    except UnicodeDecodeError:
+        # Common on Windows-exported CSVs (Excel default encoding)
+        try:
+            df = pd.read_csv(io.BytesIO(contents), encoding="cp1252")
+        except Exception as e:
+            raise HTTPException(422, f"Could not parse CSV (tried utf-8 and cp1252): {e}")
     except Exception as e:
         raise HTTPException(422, f"Could not parse CSV: {e}")
 
@@ -75,6 +85,12 @@ async def anomalies(business_id: str, week: str):
 @router.get("/weeks/{business_id}")
 async def weeks(business_id: str):
     return {"business_id": business_id, "weeks": rag.list_weeks(business_id)}
+
+
+@router.get("/trend/{business_id}")
+async def trend(business_id: str):
+    """Weekly revenue/expenses series for the dashboard chart."""
+    return {"business_id": business_id, "data": rag.get_weekly_totals(business_id)}
 
 
 @router.delete("/weeks/{business_id}/{week}")

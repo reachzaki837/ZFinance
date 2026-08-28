@@ -1,21 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/Card";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { aiNarrative } from "@/data/mockData";
+import { getNarrative } from "@/lib/api";
 
 export function AINarrative() {
+  const [narrative, setNarrative] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 1600);
-    return () => clearTimeout(t);
+  const fetchNarrative = useCallback(() => {
+    setLoading(true);
+    setError(null);
+    getNarrative()
+      .then((text) => setNarrative(text))
+      .catch((err) => {
+        console.error("Failed to fetch narrative:", err);
+        setError("Could not load narrative");
+      })
+      .finally(() => setLoading(false));
   }, []);
 
-  const refresh = () => {
-    setLoading(true);
-    setTimeout(() => setLoading(false), 1600);
-  };
+  useEffect(() => {
+    fetchNarrative();
+  }, [fetchNarrative]);
+
+  // Split into paragraphs for the same visual layout as before
+  const paragraphs = narrative
+    .split(/\n\s*\n/)
+    .map((p) => p.replace(/\*\*/g, "").trim())
+    .filter(Boolean);
 
   return (
     <Card>
@@ -32,7 +46,7 @@ export function AINarrative() {
           </span>
         </div>
         <button
-          onClick={refresh}
+          onClick={fetchNarrative}
           disabled={loading}
           className="p-1.5 rounded-lg text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-ink)] transition-colors disabled:opacity-40"
           title="Regenerate summary"
@@ -58,9 +72,11 @@ export function AINarrative() {
               <Skeleton className="h-4 w-2/3" />
             </div>
           </div>
+        ) : error ? (
+          <p className="text-sm text-[var(--color-danger)]">{error}</p>
         ) : (
           <div className="space-y-3">
-            {aiNarrative.map((para, i) => (
+            {paragraphs.map((para, i) => (
               <p
                 key={i}
                 className="text-sm leading-relaxed text-[var(--color-ink)] opacity-90"
