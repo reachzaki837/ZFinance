@@ -4,11 +4,13 @@ import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getWeeks, deleteWeek, BUSINESS_ID } from "@/lib/api";
+import { useStore } from "@/store/useStore";
 
 export function Settings() {
-  const [businessName, setBusinessName] = useState("Patel Enterprises Pvt. Ltd.");
+  const { businessName, setBusinessName } = useStore();
+  const [nameInput, setNameInput] = useState(businessName);
   const [saved, setSaved] = useState(false);
-  const [llmModel, setLlmModel] = useState("llama3.1");
+  const [llmModel] = useState("openai/gpt-oss-20b (via Groq)");
   const [anomalySensitivity, setAnomalySensitivity] = useState(2.5);
   const [amountTolerance, setAmountTolerance] = useState(500);
   const [dateTolerance, setDateTolerance] = useState(3);
@@ -37,6 +39,7 @@ export function Settings() {
   }, []);
 
   function handleSave() {
+    setBusinessName(nameInput.trim() || "Unnamed Business");
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }
@@ -103,8 +106,8 @@ export function Settings() {
               </label>
               <input
                 type="text"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
+                value={nameInput}
+                onChange={(e) => setNameInput(e.target.value)}
                 className="w-full text-sm px-3 py-2 rounded-lg bg-[var(--color-border)] text-[var(--color-ink)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-all font-[var(--font-body)]"
               />
             </div>
@@ -127,17 +130,11 @@ export function Settings() {
               <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-1.5 font-[var(--font-display)]">
                 LLM Model
               </label>
-              <select
-                value={llmModel}
-                onChange={(e) => setLlmModel(e.target.value)}
-                className="w-full text-sm px-3 py-2 rounded-lg bg-[var(--color-border)] text-[var(--color-ink)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] transition-all font-[var(--font-body)]"
-              >
-                {["llama3.1", "phi4-mini", "mistral", "openai/gpt-oss-20b"].map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
+              <p className="text-sm font-[var(--font-mono)] text-[var(--color-muted)] bg-[var(--color-border)] px-3 py-2 rounded-lg">
+                {llmModel}
+              </p>
               <p className="text-[10px] text-[var(--color-muted)] mt-1.5">
-                Backend currently uses openai/gpt-oss-20b via Groq. Changing this here is cosmetic until Settings is wired to update the backend .env.
+                Configured server-side via LLM_MODEL in the backend .env — not user-editable here to avoid pointing at an unsupported model.
               </p>
             </div>
             <div>
@@ -230,7 +227,7 @@ export function Settings() {
               </div>
             </div>
             <p className="text-[10px] text-[var(--color-muted)]">
-              These values become live once the Reconciliation agent (Step 4) is wired to read them from the backend.
+              Reconciliation thresholds are configured server-side via AMOUNT_TOLERANCE, DATE_TOLERANCE, and CONFIDENCE_ACCEPT in the backend .env. The sliders above are illustrative — wire a settings-write endpoint if you want these to control the live engine.
             </p>
           </div>
         </CardContent>

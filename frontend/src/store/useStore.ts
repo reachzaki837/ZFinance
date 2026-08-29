@@ -8,11 +8,13 @@ export interface AppState {
   darkMode: boolean;
   selectedWeek: string;
   mobileMenuOpen: boolean;
+  businessName: string;
   setScreen: (s: Screen) => void;
   toggleSidebar: () => void;
   toggleDark: () => void;
   setWeek: (w: string) => void;
   setMobileMenu: (open: boolean) => void;
+  setBusinessName: (name: string) => void;
 }
 
 function getInitialDark(): boolean {
@@ -22,6 +24,14 @@ function getInitialDark(): boolean {
     return window.matchMedia("(prefers-color-scheme: dark)").matches;
   } catch {
     return false;
+  }
+}
+
+function getInitialBusinessName(): string {
+  try {
+    return localStorage.getItem("zfinance-business-name") || "Patel Enterprises Pvt. Ltd.";
+  } catch {
+    return "Patel Enterprises Pvt. Ltd.";
   }
 }
 
@@ -45,6 +55,7 @@ export function useAppState(): AppState {
   });
   const [selectedWeek, setSelectedWeek] = useState("Aug 18 – Aug 24, 2026");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [businessName, setBusinessNameState] = useState(getInitialBusinessName);
 
   return {
     activeScreen,
@@ -52,6 +63,7 @@ export function useAppState(): AppState {
     darkMode,
     selectedWeek,
     mobileMenuOpen,
+    businessName,
     setScreen: (s: Screen) => { setActiveScreen(s); setMobileMenuOpen(false); },
     toggleSidebar: () => setSidebarCollapsed((c) => !c),
     toggleDark: () => setDarkMode((d) => {
@@ -62,6 +74,10 @@ export function useAppState(): AppState {
     }),
     setWeek: setSelectedWeek,
     setMobileMenu: setMobileMenuOpen,
+    setBusinessName: (name: string) => {
+      setBusinessNameState(name);
+      try { localStorage.setItem("zfinance-business-name", name); } catch {}
+    },
   };
 }
 

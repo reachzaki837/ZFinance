@@ -1,6 +1,7 @@
 import { type ComponentType } from "react";
 import { LayoutDashboard, ArrowLeftRight, GitCompare, MessageCircle, Settings, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useStore, type Screen } from "@/store/useStore";
+import { BUSINESS_ID } from "@/lib/api";
 
 const NAV_ITEMS: { id: Screen; label: string; icon: ComponentType<{ size?: number; className?: string }> }[] = [
   { id: "overview", label: "Overview", icon: LayoutDashboard },
@@ -11,7 +12,7 @@ const NAV_ITEMS: { id: Screen; label: string; icon: ComponentType<{ size?: numbe
 ];
 
 export function Sidebar() {
-  const { activeScreen, sidebarCollapsed, mobileMenuOpen, setScreen, toggleSidebar, setMobileMenu } = useStore();
+  const { activeScreen, sidebarCollapsed, mobileMenuOpen, setScreen, toggleSidebar, setMobileMenu, businessName } = useStore();
 
   return (
     <>
@@ -86,11 +87,11 @@ export function Sidebar() {
           })}
         </nav>
 
-        {/* Bottom: business tag */}
+        {/* Bottom: business tag — now dynamic */}
         {!sidebarCollapsed && (
           <div className="px-4 py-4 border-t border-[var(--color-border)]">
-            <p className="text-[10px] font-[var(--font-mono)] text-[var(--color-muted)] truncate">BIZ-00142</p>
-            <p className="text-xs text-[var(--color-muted)] truncate mt-0.5">Patel Enterprises</p>
+            <p className="text-[10px] font-[var(--font-mono)] text-[var(--color-muted)] truncate">{BUSINESS_ID}</p>
+            <p className="text-xs text-[var(--color-muted)] truncate mt-0.5">{businessName}</p>
           </div>
         )}
       </aside>
