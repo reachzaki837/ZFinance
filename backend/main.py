@@ -25,6 +25,7 @@ else:
     print(f"✓ GROQ_API_KEY loaded ({len(_key)} chars, starts with '{_key[:7]}...')")
 
 from rag.routes import router as rag_router
+from reconciliation.routes import router as reconciliation_router
 
 app = FastAPI(
     title="ZFinance API",
@@ -58,3 +59,4 @@ def health():
 
 
 app.include_router(rag_router, prefix="/api/rag", tags=["AI Engine"])
+app.include_router(reconciliation_router, prefix="/api/reconciliation", tags=["Reconciliation"])

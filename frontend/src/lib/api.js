@@ -95,3 +95,26 @@ export async function getTransactions(businessId = BUSINESS_ID, week = null) {
   const data = await apiFetch(`/api/rag/transactions/${businessId}${qs}`);
   return data.transactions;
 }
+
+// ── Reconciliation endpoints ──────────────────────────────────────────────────
+
+export async function getReconciliationDemo() {
+  return apiFetch("/api/reconciliation/demo");
+}
+
+export async function runReconciliation(ledgerFile, bankFile) {
+  const formData = new FormData();
+  formData.append("ledger", ledgerFile);
+  formData.append("bank", bankFile);
+
+  const response = await fetch(`${API_URL}/api/reconciliation/run`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => ({}));
+    throw new Error(errorBody.detail || "Reconciliation failed");
+  }
+  return response.json();
+}
