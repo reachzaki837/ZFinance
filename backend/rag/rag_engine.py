@@ -165,19 +165,36 @@ class ZFinanceRAG:
         if not context:
             return f"No data found for week {week}. Please upload transactions first."
         prompt = narrative_user_prompt(week, context)
-        return _call_llm(NARRATIVE_SYSTEM, prompt, temperature=0.3).strip()
+        try:
+            return _call_llm(NARRATIVE_SYSTEM, prompt, temperature=0.3).strip()
+        except Exception as e:
+            log.warning("Narrative generation failed for %s/%s: %s", business_id, week, e)
+            return (
+                "AI narrative is temporarily unavailable — the language model could not "
+                "be reached. Your underlying financial data is unaffected and still "
+                "available in the other sections of the dashboard. Please try again shortly."
+            )
 
     def generate_health_score(self, business_id: str, week: str) -> dict:
         context = self._retrieve(business_id, f"revenue expenses margin growth {week}")
         if not context:
-            return {"score": 0, "reason": "No data available", "components": {}}
+            return {"score": 0, "reason": "No data available", "components": {}, "ai_unavailable": False}
         prompt = health_score_user_prompt(week, context)
-        raw = _call_llm(HEALTH_SCORE_SYSTEM, prompt, temperature=0.1, json_mode=True)
+        try:
+            raw = _call_llm(HEALTH_SCORE_SYSTEM, prompt, temperature=0.1, json_mode=True)
+        except Exception as e:
+            log.warning("Health score call failed for %s/%s: %s", business_id, week, e)
+            return {
+                "score": None,
+                "reason": "AI health score is temporarily unavailable — the language model could not be reached.",
+                "components": {},
+                "ai_unavailable": True,
+            }
         try:
             return json.loads(raw)
         except json.JSONDecodeError:
             log.warning("Health score JSON parse failed: %s", raw[:200])
-            return {"score": 50, "reason": "Could not parse score", "components": {}}
+            return {"score": 50, "reason": "Could not parse score", "components": {}, "ai_unavailable": False}
 
     def ask(self, business_id: str, question: str, week: str | None = None) -> str:
         query = f"{question} {week or ''}".strip()
@@ -185,7 +202,14 @@ class ZFinanceRAG:
         if not context:
             return "I don't have enough financial data to answer that yet."
         prompt = qa_user_prompt(question, context)
-        return _call_llm(QA_SYSTEM, prompt, temperature=0.2).strip()
+        try:
+            return _call_llm(QA_SYSTEM, prompt, temperature=0.2).strip()
+        except Exception as e:
+            log.warning("Ask failed for %s: %s", business_id, e)
+            return (
+                "I'm temporarily unable to answer — the AI service could not be reached. "
+                "Your financial data is safe and unaffected. Please try again in a moment."
+            )
 
     def get_anomalies(self, business_id: str, week: str) -> list[dict]:
         col = self._collection(business_id)

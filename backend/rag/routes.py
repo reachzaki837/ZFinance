@@ -15,7 +15,7 @@ import pandas as pd
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from pydantic import BaseModel
 
-from rag.engine import ZFinanceRAG
+from rag.rag_engine import ZFinanceRAG
 
 router = APIRouter()
 rag = ZFinanceRAG()

@@ -11,7 +11,7 @@ import logging
 import pandas as pd
 from rapidfuzz import fuzz
 
-from rag.engine import _call_llm
+from rag.rag_engine import _call_llm
 from reconciliation.prompts import (
     FUZZY_SYSTEM, EXCEPTION_SYSTEM, fuzzy_user_prompt, exception_user_prompt,
 )
@@ -81,7 +81,17 @@ def llm_fuzzy_match(ledger_row: pd.Series, candidates: list[dict]) -> dict | Non
         "amount": ledger_row["amount"],
     }
     prompt = fuzzy_user_prompt(ledger_dict, candidates)
-    raw = _call_llm(FUZZY_SYSTEM, prompt, temperature=0.0, json_mode=True)
+
+    try:
+        raw = _call_llm(FUZZY_SYSTEM, prompt, temperature=0.0, json_mode=True)
+    except Exception as e:
+        # Groq down, rate-limited, network error, etc. — don't crash the whole
+        # reconciliation run. Fall through to "no match" so this one transaction
+        # lands in Stage 3 (exception classification), which has its own
+        # LLM-failure fallback below.
+        log.warning("LLM fuzzy match call failed for %s: %s", ledger_row["ref_id"], e)
+        return None
+
     data = _safe_json(raw)
 
     if not data.get("match_found"):
@@ -111,8 +121,25 @@ def classify_exception(ledger_row: pd.Series, candidates: list[dict]) -> dict:
         "amount": ledger_row["amount"],
     }
     prompt = exception_user_prompt(ledger_dict, candidates)
-    raw = _call_llm(EXCEPTION_SYSTEM, prompt, temperature=0.0, json_mode=True)
-    data = _safe_json(raw)
+
+    try:
+        raw = _call_llm(EXCEPTION_SYSTEM, prompt, temperature=0.0, json_mode=True)
+        data = _safe_json(raw)
+    except Exception as e:
+        # LLM is genuinely unavailable. Still return a complete, honest record —
+        # never silently drop a transaction from the report. Confidence 0 makes
+        # it clearly distinguishable from a real AI classification.
+        log.warning("LLM exception classification failed for %s: %s", ledger_row["ref_id"], e)
+        data = {
+            "exception_type": "llm_unavailable",
+            "confidence": 0.0,
+            "evidence": (
+                "AI classification could not be completed (the language model "
+                "was unreachable or returned an invalid response). This transaction "
+                "requires manual review."
+            ),
+            "recommendation": "Retry reconciliation once AI service is available, or review manually.",
+        }
 
     return {
         "ledger_ref": ledger_row["ref_id"],
