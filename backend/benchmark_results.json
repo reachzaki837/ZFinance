@@ -1,0 +1,15 @@
+{
+  "records": 55,
+  "exact_matches": 38,
+  "ai_assisted_matches": 11,
+  "unresolved_exceptions": 6,
+  "match_rate": 0.8909,
+  "precision": 1.0,
+  "recall": 1.0,
+  "classification_accuracy": 1.0,
+  "auto_resolution_accuracy": 1.0,
+  "duplicate_detection_accuracy": 1.0,
+  "runtime_seconds": 39.8,
+  "false_positives": [],
+  "false_negatives": []
+}

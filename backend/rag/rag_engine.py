@@ -7,6 +7,7 @@ and an LLM (Groq or Ollama) for narrative/health-score/Q&A generation.
 
 import os
 import json
+import time
 import logging
 
 import pandas as pd
@@ -30,30 +31,66 @@ GROQ_API_KEY  = os.getenv("GROQ_API_KEY", "")
 TOP_K         = int(os.getenv("RAG_TOP_K", "10"))
 SIGMA         = float(os.getenv("ANOMALY_SIGMA", "2.5"))
 
+MAX_RETRIES   = 3   # for transient failures (rate limits, network blips)
+
 
 def _call_llm(system: str, user: str, temperature: float = 0.3, json_mode: bool = False) -> str:
-    if LLM_PROVIDER == "groq":
-        from groq import Groq
-        client = Groq(api_key=GROQ_API_KEY)
-        kwargs = {}
-        if json_mode:
-            kwargs["response_format"] = {"type": "json_object"}
-        resp = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-            temperature=temperature,
-            **kwargs,
-        )
-        return resp.choices[0].message.content
-    else:
-        import ollama
-        resp = ollama.chat(
-            model=LLM_MODEL,
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-            options={"temperature": temperature},
-            format="json" if json_mode else None,
-        )
-        return resp["message"]["content"]
+    """
+    Calls the configured LLM provider. Retries transient failures (rate limits,
+    timeouts, connection errors) with exponential backoff — up to MAX_RETRIES
+    times — before letting the exception propagate to the caller. Non-transient
+    failures (invalid API key, malformed request) fail immediately since
+    retrying won't help.
+    """
+    last_error = None
+
+    for attempt in range(MAX_RETRIES):
+        try:
+            if LLM_PROVIDER == "groq":
+                from groq import Groq
+                client = Groq(api_key=GROQ_API_KEY)
+                kwargs = {}
+                if json_mode:
+                    kwargs["response_format"] = {"type": "json_object"}
+                resp = client.chat.completions.create(
+                    model=LLM_MODEL,
+                    messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+                    temperature=temperature,
+                    **kwargs,
+                )
+                return resp.choices[0].message.content
+            else:
+                import ollama
+                resp = ollama.chat(
+                    model=LLM_MODEL,
+                    messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+                    options={"temperature": temperature},
+                    format="json" if json_mode else None,
+                )
+                return resp["message"]["content"]
+
+        except Exception as e:
+            last_error = e
+            error_str = str(e)
+
+            # Don't retry auth failures — a bad API key won't fix itself
+            if "invalid_api_key" in error_str or "401" in error_str:
+                raise
+
+            is_last_attempt = attempt == MAX_RETRIES - 1
+            if is_last_attempt:
+                raise
+
+            # Exponential backoff: 2s, 4s, 8s. Rate limit errors from Groq
+            # (429) typically clear within a couple seconds.
+            wait = 2 ** (attempt + 1)
+            log.warning(
+                "LLM call failed (attempt %d/%d), retrying in %ds: %s",
+                attempt + 1, MAX_RETRIES, wait, error_str[:150],
+            )
+            time.sleep(wait)
+
+    raise last_error
 
 
 class ZFinanceRAG:

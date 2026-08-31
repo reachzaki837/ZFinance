@@ -5,12 +5,18 @@ Three-stage pipeline: exact match -> LLM fuzzy match -> exception classification
 """
 
 import logging
+import time
 import pandas as pd
 
 from reconciliation.matcher import normalise_ledger, normalise_bank, exact_match
 from reconciliation.fuzzy import get_candidates, llm_fuzzy_match, classify_exception
 
 log = logging.getLogger("zfinance.reconciliation")
+
+# Small pacing delay between LLM calls in Stages 2/3. Groq's free tier caps
+# tokens/minute — spacing calls out avoids bursting into that limit on
+# larger datasets, at the cost of a few extra seconds of total runtime.
+LLM_CALL_DELAY_SECONDS = 0.5
 
 
 class ReconciliationEngine:
@@ -47,6 +53,7 @@ class ReconciliationEngine:
                 fuzzy_matches.append(match)
             else:
                 still_unmatched.append(i)
+            time.sleep(LLM_CALL_DELAY_SECONDS)
 
         log.info("Stage 2 (fuzzy): %d matched, %d to exceptions", len(fuzzy_matches), len(still_unmatched))
 
@@ -56,6 +63,7 @@ class ReconciliationEngine:
             candidates = get_candidates(row, bank, used_bank_indices, wider=True)
             exc = classify_exception(row, candidates)
             exceptions.append(exc)
+            time.sleep(LLM_CALL_DELAY_SECONDS)
 
         log.info("Stage 3 (exceptions): %d classified", len(exceptions))
 
