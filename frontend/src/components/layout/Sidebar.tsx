@@ -1,5 +1,6 @@
 import { type ComponentType } from "react";
 import { LayoutDashboard, ArrowLeftRight, GitCompare, MessageCircle, Settings, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { useStore, type Screen } from "@/store/useStore";
 import { BUSINESS_ID } from "@/lib/api";
 
@@ -45,18 +46,24 @@ export function Sidebar() {
               ZFinance
             </span>
           )}
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => { toggleSidebar(); setMobileMenu(false); }}
-            className="hidden md:flex p-1.5 rounded-lg text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-ink)] transition-colors ml-auto"
+            title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="hidden md:inline-flex ml-auto"
           >
             {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setMobileMenu(false)}
-            className="md:hidden p-1.5 rounded-lg text-[var(--color-muted)] hover:bg-[var(--color-border)] transition-colors"
+            title="Close menu"
+            className="md:hidden"
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
 
         {/* Nav items */}
@@ -90,7 +97,7 @@ export function Sidebar() {
         {/* Bottom: business tag — now dynamic */}
         {!sidebarCollapsed && (
           <div className="px-4 py-4 border-t border-[var(--color-border)]">
-            <p className="text-[10px] font-[var(--font-mono)] text-[var(--color-muted)] truncate">{BUSINESS_ID}</p>
+            <p className="text-xs font-[var(--font-mono)] text-[var(--color-muted)] truncate">{BUSINESS_ID}</p>
             <p className="text-xs text-[var(--color-muted)] truncate mt-0.5">{businessName}</p>
           </div>
         )}

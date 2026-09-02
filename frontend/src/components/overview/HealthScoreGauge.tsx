@@ -83,8 +83,9 @@ export function HealthScoreGauge() {
 }
 */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { RadialBarChart, RadialBar, ResponsiveContainer } from "recharts";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { useStore } from "@/store/useStore";
 import { getHealthScore } from "@/lib/api";
 
@@ -109,28 +110,25 @@ export function HealthScoreGauge() {
   const { darkMode } = useStore();
 
   // Fetch real score from backend
-  useEffect(() => {
-    let cancelled = false;
+  const loadScore = useCallback(() => {
     setLoading(true);
     setError(null);
 
     getHealthScore()
       .then((data) => {
-        if (cancelled) return;
         setTargetScore(data.score ?? 0);
         setReason(data.reason ?? "");
       })
       .catch((err) => {
-        if (cancelled) return;
         console.error("Failed to fetch health score:", err);
         setError("Could not load health score");
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => { cancelled = true; };
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadScore();
+  }, [loadScore]);
 
   // Animate from 0 to the real fetched score
   useEffect(() => {
@@ -158,20 +156,15 @@ export function HealthScoreGauge() {
     return (
       <div className="flex flex-col items-center py-8">
         <div className="w-52 h-52 rounded-full skeleton" />
-        <p className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)] mt-3">
+        <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)] mt-3">
           Financial Health Score
-        </p>
+        </h2>
       </div>
     );
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col items-center py-8 gap-2">
-        <p className="text-sm text-[var(--color-danger)]">{error}</p>
-        <p className="text-xs text-[var(--color-muted)]">Check that the backend is running and data has been ingested.</p>
-      </div>
-    );
+    return <ErrorState message={error} onRetry={loadScore} />;
   }
 
   return (
@@ -208,9 +201,9 @@ export function HealthScoreGauge() {
           </span>
         </div>
       </div>
-      <p className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)] mt-3">
+      <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)] mt-3">
         Financial Health Score
-      </p>
+      </h2>
       <p className="text-xs text-[var(--color-muted)] mt-1">{reason}</p>
     </div>
   );

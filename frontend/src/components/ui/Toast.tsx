@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CheckCircle, X } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 interface ToastProps {
   message: string;
@@ -27,12 +28,15 @@ export function Toast({ message, onClose, duration = 4000 }: ToastProps) {
     >
       <CheckCircle size={18} className="text-[var(--color-success)] shrink-0" />
       <span className="text-sm font-medium text-[var(--color-ink)]">{message}</span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => { setVisible(false); setTimeout(onClose, 300); }}
-        className="ml-2 text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
+        className="ml-1"
+        title="Dismiss"
       >
         <X size={14} />
-      </button>
+      </Button>
     </div>
   );
 }

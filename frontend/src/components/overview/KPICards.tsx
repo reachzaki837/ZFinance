@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { TrendingUp, TrendingDown, DollarSign, BarChart2, PiggyBank, Percent } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getTrend } from "@/lib/api";
 
@@ -51,19 +52,21 @@ export function KPICards() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadKPIs = useCallback(() => {
+    setLoading(true);
+    setError(null);
     getTrend()
-      .then((data: WeekTotal[]) => {
-        if (!cancelled) setKpis(computeKPIs(data));
-      })
+      .then((data: WeekTotal[]) => setKpis(computeKPIs(data)))
       .catch((err) => {
         console.error("Failed to fetch trend for KPIs:", err);
-        if (!cancelled) setError("Could not load KPIs");
+        setError("Could not load KPIs");
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadKPIs();
+  }, [loadKPIs]);
 
   if (loading) {
     return (
@@ -75,12 +78,22 @@ export function KPICards() {
     );
   }
 
-  if (error || kpis.length === 0) {
+  if (error) {
+    return (
+      <Card>
+        <CardContent className="pt-5">
+          <ErrorState message={error} onRetry={loadKPIs} />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (kpis.length === 0) {
     return (
       <Card>
         <CardContent className="pt-5">
           <p className="text-sm text-[var(--color-muted)]">
-            {error || "No data ingested yet — upload transactions to see KPIs."}
+            No data ingested yet — upload transactions to see KPIs.
           </p>
         </CardContent>
       </Card>
@@ -119,7 +132,7 @@ export function KPICards() {
               <p className="text-2xl font-bold font-[var(--font-mono)] text-[var(--color-ink)] leading-none">
                 {kpi.isPercent ? `${kpi.value.toFixed(2)}%` : formatINR(kpi.value)}
               </p>
-              <p className="text-[10px] text-[var(--color-muted)] mt-1.5">vs last week</p>
+              <p className="text-xs text-[var(--color-muted)] mt-1.5">vs last week</p>
             </CardContent>
           </Card>
         );

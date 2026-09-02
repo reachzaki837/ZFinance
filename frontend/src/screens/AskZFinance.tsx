@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { SendHorizonal, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { askQuestion } from "@/lib/api";
 
 interface Message {
@@ -75,13 +76,9 @@ export function AskZFinance() {
             </div>
             <div className="flex flex-wrap gap-2 justify-center">
               {SUGGESTIONS.map((s) => (
-                <button
-                  key={s}
-                  onClick={() => sendMessage(s)}
-                  className="text-sm px-4 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-ink)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all duration-200 font-[var(--font-display)]"
-                >
+                <Button key={s} variant="outline" className="rounded-xl" onClick={() => sendMessage(s)}>
                   {s}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -141,14 +138,16 @@ export function AskZFinance() {
       {!isEmpty && (
         <div className="flex flex-wrap gap-1.5 py-2">
           {SUGGESTIONS.map((s) => (
-            <button
+            <Button
               key={s}
+              variant="outline"
+              size="sm"
+              className="rounded-xl"
               onClick={() => sendMessage(s)}
               disabled={typing}
-              className="text-xs px-3 py-1.5 rounded-xl border border-[var(--color-border)] text-[var(--color-muted)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)] transition-all duration-200 font-[var(--font-display)] disabled:opacity-40"
             >
               {s}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -165,14 +164,15 @@ export function AskZFinance() {
             placeholder="Ask about your finances…"
             className="flex-1 bg-transparent text-sm text-[var(--color-ink)] placeholder:text-[var(--color-muted)] focus:outline-none px-2 font-[var(--font-body)]"
           />
-          <button
+          <Button
+            size="icon"
             onClick={() => sendMessage(input)}
             disabled={!input.trim() || typing}
-            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{ background: "var(--color-accent)" }}
+            className="w-9 h-9 justify-center shrink-0"
+            title="Send"
           >
             <SendHorizonal size={15} className="text-white" />
-          </button>
+          </Button>
         </div>
       </div>
     </div>

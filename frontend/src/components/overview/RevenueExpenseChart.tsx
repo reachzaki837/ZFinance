@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts";
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { useStore } from "@/store/useStore";
 import { getTrend } from "@/lib/api";
@@ -39,17 +40,21 @@ export function RevenueExpenseChart() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadTrend = useCallback(() => {
+    setLoading(true);
+    setError(null);
     getTrend()
-      .then((trend: WeekTotal[]) => { if (!cancelled) setData(trend); })
+      .then((trend: WeekTotal[]) => setData(trend))
       .catch((err) => {
         console.error("Failed to fetch trend:", err);
-        if (!cancelled) setError("Could not load chart data");
+        setError("Could not load chart data");
       })
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadTrend();
+  }, [loadTrend]);
 
   const gridColor = darkMode ? "#2E2C3A" : "#E8E4DA";
   const axisColor = darkMode ? "#9C97A8" : "#8A8578";
@@ -59,9 +64,9 @@ export function RevenueExpenseChart() {
   return (
     <Card>
       <CardHeader>
-        <span className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
+        <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
           Revenue vs Expenses
-        </span>
+        </h2>
         <span className="text-xs text-[var(--color-muted)] font-[var(--font-body)]">
           {data.length > 0 ? `Last ${data.length} weeks` : ""}
         </span>
@@ -69,9 +74,11 @@ export function RevenueExpenseChart() {
       <CardContent className="pb-6">
         {loading ? (
           <Skeleton className="h-[260px] w-full" />
-        ) : error || data.length === 0 ? (
+        ) : error ? (
+          <ErrorState message={error} onRetry={loadTrend} />
+        ) : data.length === 0 ? (
           <p className="text-sm text-[var(--color-muted)] py-10 text-center">
-            {error || "No data ingested yet — upload transactions to see the trend."}
+            No data ingested yet — upload transactions to see the trend.
           </p>
         ) : (
           <ResponsiveContainer width="100%" height={260}>

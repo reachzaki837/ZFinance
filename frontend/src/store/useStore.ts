@@ -1,6 +1,11 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+
+import { checkHealth } from "@/lib/api";
 
 export type Screen = "overview" | "transactions" | "reconciliation" | "ask" | "settings";
+
+/** How often the backend health check re-runs, in milliseconds. */
+const HEALTH_POLL_MS = 30_000;
 
 export interface AppState {
   activeScreen: Screen;
@@ -9,12 +14,16 @@ export interface AppState {
   selectedWeek: string;
   mobileMenuOpen: boolean;
   businessName: string;
+  backendReachable: boolean;
+  bannerDismissed: boolean;
   setScreen: (s: Screen) => void;
   toggleSidebar: () => void;
   toggleDark: () => void;
   setWeek: (w: string) => void;
   setMobileMenu: (open: boolean) => void;
   setBusinessName: (name: string) => void;
+  checkBackend: () => void;
+  dismissBanner: () => void;
 }
 
 function getInitialDark(): boolean {
@@ -56,6 +65,23 @@ export function useAppState(): AppState {
   const [selectedWeek, setSelectedWeek] = useState("Aug 18 – Aug 24, 2026");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [businessName, setBusinessNameState] = useState(getInitialBusinessName);
+  const [backendReachable, setBackendReachable] = useState(true);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
+
+  const checkBackend = useCallback(() => {
+    checkHealth()
+      .then(() => setBackendReachable(true))
+      .catch(() => setBackendReachable(false))
+      // Clear any dismissal either way: while the backend stays down the banner
+      // re-appears on the next poll, and once it recovers the next outage starts fresh.
+      .finally(() => setBannerDismissed(false));
+  }, []);
+
+  useEffect(() => {
+    checkBackend();
+    const timer = setInterval(checkBackend, HEALTH_POLL_MS);
+    return () => clearInterval(timer);
+  }, [checkBackend]);
 
   return {
     activeScreen,
@@ -64,6 +90,8 @@ export function useAppState(): AppState {
     selectedWeek,
     mobileMenuOpen,
     businessName,
+    backendReachable,
+    bannerDismissed,
     setScreen: (s: Screen) => { setActiveScreen(s); setMobileMenuOpen(false); },
     toggleSidebar: () => setSidebarCollapsed((c) => !c),
     toggleDark: () => setDarkMode((d) => {
@@ -78,6 +106,8 @@ export function useAppState(): AppState {
       setBusinessNameState(name);
       try { localStorage.setItem("zfinance-business-name", name); } catch {}
     },
+    checkBackend,
+    dismissBanner: () => setBannerDismissed(true),
   };
 }
 

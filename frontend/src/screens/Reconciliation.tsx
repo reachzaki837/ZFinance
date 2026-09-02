@@ -3,6 +3,9 @@ import { Upload, CheckCircle, Sparkles, AlertTriangle, ChevronDown, ChevronUp, P
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { DropZone } from "@/components/ui/DropZone";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useStore } from "@/store/useStore";
 import { getReconciliationDemo, runReconciliation } from "@/lib/api";
@@ -52,44 +55,21 @@ interface ReconciliationResult {
   exceptions: ExceptionItem[];
 }
 
-function DropZone({ label, file, onSelect }: { label: string; file: File | null; onSelect: (f: File) => void }) {
-  const [dragging, setDragging] = useState(false);
-  const inputRef = useState<HTMLInputElement | null>(null)[0];
-
+/** Labelled CSV drop target: wraps the shared DropZone with this screen's icon + caption. */
+function CsvDropZone({ label, file, onSelect }: { label: string; file: File | null; onSelect: (f: File) => void }) {
   return (
-    <div
-      onClick={() => document.getElementById(`file-${label}`)?.click()}
-      onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-      onDragLeave={() => setDragging(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setDragging(false);
-        const f = e.dataTransfer.files?.[0];
-        if (f) onSelect(f);
-      }}
-      className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center gap-3 cursor-pointer transition-all duration-200 ${
+    <DropZone
+      onSelect={onSelect}
+      state={file ? "success" : "idle"}
+      icon={
         file
-          ? "border-[var(--color-success)] bg-[color-mix(in_srgb,var(--color-success)_6%,transparent)]"
-          : dragging
-          ? "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_6%,transparent)]"
-          : "border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[color-mix(in_srgb,var(--color-accent)_4%,transparent)]"
-      }`}
+          ? <CheckCircle size={28} style={{ color: "var(--color-success)" }} />
+          : <Upload size={28} style={{ color: "var(--color-accent)" }} />
+      }
     >
-      {file ? (
-        <CheckCircle size={28} style={{ color: "var(--color-success)" }} />
-      ) : (
-        <Upload size={28} style={{ color: "var(--color-accent)" }} />
-      )}
       <p className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)] text-center">{label}</p>
       <p className="text-xs text-[var(--color-muted)]">{file ? file.name : "Click or drag to upload"}</p>
-      <input
-        id={`file-${label}`}
-        type="file"
-        accept=".csv"
-        className="hidden"
-        onChange={(e) => e.target.files?.[0] && onSelect(e.target.files[0])}
-      />
-    </div>
+    </DropZone>
   );
 }
 
@@ -101,17 +81,20 @@ export function Reconciliation() {
   const [result, setResult] = useState<ReconciliationResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [openException, setOpenException] = useState<string | null>(null);
+  // True when the displayed result came from the bundled sample files rather than an upload.
+  const [isDemoData, setIsDemoData] = useState(false);
   const { darkMode } = useStore();
 
   const barColor = darkMode ? "#FFB84D" : "#F5A623";
   const axisColor = darkMode ? "#9C97A8" : "#8A8580";
   const gridColor = darkMode ? "#2E2C3A" : "#E8E4DA";
 
-  async function execute(runner: () => Promise<any>) {
+  async function execute(runner: () => Promise<any>, demo: boolean) {
     setRunning(true);
     setError(null);
     setResult(null);
     setStageIndex(0);
+    setIsDemoData(demo);
 
     // Cosmetic stage progression while the real request is in flight —
     // the backend doesn't stream per-stage events, so this approximates
@@ -148,14 +131,14 @@ export function Reconciliation() {
       {/* Upload section */}
       <Card>
         <CardHeader>
-          <span className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
+          <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
             AI Reconciliation Agent
-          </span>
+          </h2>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-            <DropZone label="Upload Ledger CSV" file={ledgerFile} onSelect={setLedgerFile} />
-            <DropZone label="Upload Bank Statement CSV" file={bankFile} onSelect={setBankFile} />
+            <CsvDropZone label="Upload Ledger CSV" file={ledgerFile} onSelect={setLedgerFile} />
+            <CsvDropZone label="Upload Bank Statement CSV" file={bankFile} onSelect={setBankFile} />
           </div>
 
           {running && (
@@ -172,27 +155,25 @@ export function Reconciliation() {
                   }}
                 />
               </div>
-              <p className="text-[10px] text-[var(--color-muted)] mt-2">
+              <p className="text-xs text-[var(--color-muted)] mt-2">
                 Real AI calls in progress — this can take 30-90 seconds for larger files.
               </p>
             </div>
           )}
 
-          {error && (
-            <p className="text-sm text-[var(--color-danger)] mb-4">{error}</p>
-          )}
+          {error && <ErrorState message={error} />}
 
           <div className="flex gap-3 flex-wrap">
             <Button
               disabled={!ledgerFile || !bankFile || running}
-              onClick={() => execute(() => runReconciliation(ledgerFile!, bankFile!))}
+              onClick={() => execute(() => runReconciliation(ledgerFile!, bankFile!), false)}
             >
               {running ? "Running…" : "Run Reconciliation"}
             </Button>
             <Button
               variant="outline"
               disabled={running}
-              onClick={() => execute(() => getReconciliationDemo())}
+              onClick={() => execute(() => getReconciliationDemo(), true)}
             >
               <PlayCircle size={14} />
               Try with sample data
@@ -204,6 +185,13 @@ export function Reconciliation() {
       {/* Results */}
       {result && (
         <>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
+              Reconciliation Results
+            </h2>
+            {isDemoData && <Badge variant="accent">Sample data</Badge>}
+          </div>
+
           {/* Stat cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
@@ -234,7 +222,7 @@ export function Reconciliation() {
                   {label !== "Match Rate" && (
                     <p className="text-3xl font-bold font-[var(--font-mono)] text-[var(--color-ink)] mb-1">{value}</p>
                   )}
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] font-[var(--font-display)]">{label}</p>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)] font-[var(--font-display)]">{label}</p>
                 </CardContent>
               </Card>
             ))}
@@ -244,9 +232,9 @@ export function Reconciliation() {
           {exceptionChartData.length > 0 && (
             <Card>
               <CardHeader>
-                <span className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
+                <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
                   Exception Breakdown
-                </span>
+                </h2>
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={Math.max(120, exceptionChartData.length * 44)}>
@@ -272,9 +260,9 @@ export function Reconciliation() {
 
           {/* Exception cards */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
+            <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
               Exception Details
-            </h3>
+            </h2>
             {result.exceptions.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center">
@@ -287,8 +275,9 @@ export function Reconciliation() {
               const isCritical = ex.exception_type === "bank_duplicate" || ex.confidence < 0.5;
               return (
                 <Card key={ex.ledger_ref}>
-                  <button
-                    className="w-full flex items-center justify-between px-5 py-4 text-left"
+                  <Button
+                    variant="ghost"
+                    className="w-full flex justify-between px-5 py-4 text-left rounded-none"
                     onClick={() => setOpenException(isOpen ? null : ex.ledger_ref)}
                   >
                     <div className="flex items-center gap-3 flex-wrap">
@@ -302,7 +291,7 @@ export function Reconciliation() {
                       </Badge>
                     </div>
                     {isOpen ? <ChevronUp size={14} className="text-[var(--color-muted)] shrink-0" /> : <ChevronDown size={14} className="text-[var(--color-muted)] shrink-0" />}
-                  </button>
+                  </Button>
                   {isOpen && (
                     <div className="px-5 pb-5 border-t border-[var(--color-border)] pt-4">
                       <p className="text-sm text-[var(--color-ink)] leading-relaxed mb-3">{ex.evidence}</p>
@@ -313,14 +302,12 @@ export function Reconciliation() {
                       )}
                       {ex.candidates.length > 0 ? (
                         <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-2">
+                          <p className="text-xs font-semibold uppercase tracking-wider text-[var(--color-muted)] mb-2">
                             Candidates Considered
                           </p>
                           <div className="flex flex-wrap gap-2">
                             {ex.candidates.map((c) => (
-                              <span key={c} className="text-xs font-[var(--font-mono)] px-2.5 py-1 rounded-lg bg-[var(--color-border)] text-[var(--color-muted)]">
-                                {c}
-                              </span>
+                              <Chip key={c} className="font-[var(--font-mono)]">{c}</Chip>
                             ))}
                           </div>
                         </div>

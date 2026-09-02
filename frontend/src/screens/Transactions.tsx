@@ -1,7 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Upload, ArrowUpDown, ArrowUp, ArrowDown, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Chip } from "@/components/ui/Chip";
+import { DropZone } from "@/components/ui/DropZone";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { Toast } from "@/components/ui/Toast";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getTransactions, ingestCSV, getWeeks, CURRENT_WEEK } from "@/lib/api";
@@ -41,7 +44,6 @@ export function Transactions() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [toast, setToast] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [uploadWeek, setUploadWeek] = useState(CURRENT_WEEK);
 
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -49,7 +51,6 @@ export function Transactions() {
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [page, setPage] = useState(1);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const loadTransactions = useCallback((week?: string) => {
     setLoadingTx(true);
@@ -148,28 +149,19 @@ export function Transactions() {
               className="text-xs font-[var(--font-mono)] px-3 py-1.5 rounded-lg bg-[var(--color-border)] text-[var(--color-ink)] border border-[var(--color-border)] focus:outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
             />
           </div>
-          <div
-            onClick={() => !uploading && fileInputRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setIsDragging(false);
-              const file = e.dataTransfer.files?.[0];
-              if (file) handleUpload(file);
-            }}
-            className={`border-2 border-dashed rounded-xl p-10 flex flex-col items-center gap-3 cursor-pointer transition-all duration-200 ${
-              isDragging
-                ? "border-[var(--color-accent)] bg-[color-mix(in_srgb,var(--color-accent)_6%,transparent)]"
-                : "border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[color-mix(in_srgb,var(--color-accent)_4%,transparent)]"
-            }`}
+          <DropZone
+            onSelect={handleUpload}
+            disabled={uploading}
+            className="p-10"
+            icon={
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ background: "color-mix(in srgb, var(--color-accent) 12%, transparent)" }}
+              >
+                <Upload size={22} style={{ color: "var(--color-accent)" }} />
+              </div>
+            }
           >
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center"
-              style={{ background: "color-mix(in srgb, var(--color-accent) 12%, transparent)" }}
-            >
-              <Upload size={22} style={{ color: "var(--color-accent)" }} />
-            </div>
             {uploading ? (
               <div className="w-full max-w-sm">
                 <p className="text-sm font-medium text-[var(--color-ink)] text-center mb-3">Ingesting transactions…</p>
@@ -191,14 +183,7 @@ export function Transactions() {
                 </p>
               </>
             )}
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".csv"
-            className="hidden"
-            onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
-          />
+          </DropZone>
         </CardContent>
       </Card>
 
@@ -228,31 +213,18 @@ export function Transactions() {
             </div>
             {allCategories.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
-                {allCategories.map((cat) => {
-                  const active = selectedCategories.includes(cat);
-                  const color = colorFor(cat);
-                  return (
-                    <button
-                      key={cat}
-                      onClick={() => toggleCategory(cat)}
-                      className="text-xs px-2.5 py-1 rounded-full font-medium font-[var(--font-display)] border transition-all duration-150"
-                      style={{
-                        color: active ? "white" : color,
-                        background: active ? color : `color-mix(in srgb, ${color} 10%, transparent)`,
-                        borderColor: `color-mix(in srgb, ${color} 30%, transparent)`,
-                      }}
-                    >
-                      {cat}
-                    </button>
-                  );
-                })}
-                {selectedCategories.length > 0 && (
-                  <button
-                    onClick={() => setSelectedCategories([])}
-                    className="text-xs px-2.5 py-1 rounded-full font-medium font-[var(--font-display)] text-[var(--color-muted)] hover:text-[var(--color-ink)] transition-colors"
+                {allCategories.map((cat) => (
+                  <Chip
+                    key={cat}
+                    color={colorFor(cat)}
+                    active={selectedCategories.includes(cat)}
+                    onClick={() => toggleCategory(cat)}
                   >
-                    Clear
-                  </button>
+                    {cat}
+                  </Chip>
+                ))}
+                {selectedCategories.length > 0 && (
+                  <Chip onClick={() => setSelectedCategories([])}>Clear</Chip>
                 )}
               </div>
             )}
@@ -269,7 +241,7 @@ export function Transactions() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : txError ? (
-          <div className="p-8 text-center text-sm text-[var(--color-danger)]">{txError}</div>
+          <ErrorState message={txError} onRetry={() => loadTransactions(selectedWeek)} />
         ) : (
           <>
             <div className="overflow-x-auto">
@@ -285,7 +257,7 @@ export function Transactions() {
                       <th
                         key={label}
                         onClick={() => key && handleSort(key)}
-                        className={`px-5 py-3 text-left text-[10px] font-semibold font-[var(--font-display)] uppercase tracking-wider text-[var(--color-muted)] ${key ? "cursor-pointer hover:text-[var(--color-ink)] select-none" : ""}`}
+                        className={`px-5 py-3 text-left text-xs font-semibold font-[var(--font-display)] uppercase tracking-wider text-[var(--color-muted)] ${key ? "cursor-pointer hover:text-[var(--color-ink)] select-none" : ""}`}
                       >
                         <span className="flex items-center gap-1">
                           {label}
@@ -319,12 +291,7 @@ export function Transactions() {
                           {tx.description}
                         </td>
                         <td className="px-5 py-3.5">
-                          <span
-                            className="text-xs px-2 py-0.5 rounded-full font-medium font-[var(--font-display)]"
-                            style={{ color: catColor, background: `color-mix(in srgb, ${catColor} 12%, transparent)` }}
-                          >
-                            {tx.category}
-                          </span>
+                          <Chip color={catColor}>{tx.category}</Chip>
                         </td>
                         <td className={`px-5 py-3.5 text-sm font-bold font-[var(--font-mono)] whitespace-nowrap ${isPositive ? "text-[var(--color-success)]" : "text-[var(--color-danger)]"}`}>
                           {isPositive ? "+" : "–"}{formatINR(tx.amount)}

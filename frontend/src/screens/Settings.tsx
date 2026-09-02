@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Save, Trash2, AlertTriangle } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getWeeks, deleteWeek, BUSINESS_ID } from "@/lib/api";
 import { useStore } from "@/store/useStore";
@@ -22,7 +23,7 @@ export function Settings() {
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  function loadWeeks() {
+  const loadWeeks = useCallback(() => {
     setLoadingWeeks(true);
     setWeeksError(null);
     getWeeks()
@@ -32,11 +33,11 @@ export function Settings() {
         setWeeksError("Could not load ingested weeks");
       })
       .finally(() => setLoadingWeeks(false));
-  }
+  }, []);
 
   useEffect(() => {
     loadWeeks();
-  }, []);
+  }, [loadWeeks]);
 
   function handleSave() {
     setBusinessName(nameInput.trim() || "Unnamed Business");
@@ -70,7 +71,7 @@ export function Settings() {
           <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl p-6 w-full max-w-sm mx-4 card-shadow">
             <div className="flex items-center gap-3 mb-4">
               <AlertTriangle size={20} style={{ color: "var(--color-danger)" }} />
-              <h3 className="text-base font-semibold font-[var(--font-display)] text-[var(--color-ink)]">Delete Week Data?</h3>
+              <h2 className="text-base font-semibold font-[var(--font-display)] text-[var(--color-ink)]">Delete Week Data?</h2>
             </div>
             <p className="text-sm text-[var(--color-muted)] mb-5 font-[var(--font-body)]">
               This will permanently remove all transaction data for <strong className="text-[var(--color-ink)]">{deleteTarget}</strong>. This action cannot be undone.
@@ -88,7 +89,7 @@ export function Settings() {
       {/* Business Profile */}
       <Card>
         <CardHeader>
-          <span className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">Business Profile</span>
+          <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">Business Profile</h2>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -122,7 +123,7 @@ export function Settings() {
       {/* AI Engine Configuration */}
       <Card>
         <CardHeader>
-          <span className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">AI Engine Configuration</span>
+          <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">AI Engine Configuration</h2>
         </CardHeader>
         <CardContent>
           <div className="space-y-5">
@@ -133,7 +134,7 @@ export function Settings() {
               <p className="text-sm font-[var(--font-mono)] text-[var(--color-muted)] bg-[var(--color-border)] px-3 py-2 rounded-lg">
                 {llmModel}
               </p>
-              <p className="text-[10px] text-[var(--color-muted)] mt-1.5">
+              <p className="text-xs text-[var(--color-muted)] mt-1.5">
                 Configured server-side via LLM_MODEL in the backend .env — not user-editable here to avoid pointing at an unsupported model.
               </p>
             </div>
@@ -155,7 +156,7 @@ export function Settings() {
                 onChange={(e) => setAnomalySensitivity(Number(e.target.value))}
                 className="w-full accent-[var(--color-accent)] cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-[var(--color-muted)] mt-1 font-[var(--font-mono)]">
+              <div className="flex justify-between text-xs text-[var(--color-muted)] mt-1 font-[var(--font-mono)]">
                 <span>1.5σ (sensitive)</span>
                 <span>4.0σ (strict)</span>
               </div>
@@ -175,7 +176,7 @@ export function Settings() {
       {/* Reconciliation Settings */}
       <Card>
         <CardHeader>
-          <span className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">Reconciliation Settings</span>
+          <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">Reconciliation Settings</h2>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -221,12 +222,12 @@ export function Settings() {
                 onChange={(e) => setConfidenceThreshold(Number(e.target.value))}
                 className="w-full accent-[var(--color-accent)] cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] text-[var(--color-muted)] mt-1 font-[var(--font-mono)]">
+              <div className="flex justify-between text-xs text-[var(--color-muted)] mt-1 font-[var(--font-mono)]">
                 <span>0.50 (permissive)</span>
                 <span>1.00 (exact only)</span>
               </div>
             </div>
-            <p className="text-[10px] text-[var(--color-muted)]">
+            <p className="text-xs text-[var(--color-muted)]">
               Reconciliation thresholds are configured server-side via AMOUNT_TOLERANCE, DATE_TOLERANCE, and CONFIDENCE_ACCEPT in the backend .env. The sliders above are illustrative — wire a settings-write endpoint if you want these to control the live engine.
             </p>
           </div>
@@ -236,7 +237,7 @@ export function Settings() {
       {/* Data Management */}
       <Card>
         <CardHeader>
-          <span className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">Data Management</span>
+          <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">Data Management</h2>
         </CardHeader>
         <CardContent>
           {loadingWeeks ? (
@@ -245,7 +246,7 @@ export function Settings() {
               <Skeleton className="h-14 w-full rounded-xl" />
             </div>
           ) : weeksError ? (
-            <p className="text-sm text-[var(--color-danger)] py-4 text-center">{weeksError}</p>
+            <ErrorState message={weeksError} onRetry={loadWeeks} />
           ) : weeks.length === 0 ? (
             <p className="text-sm text-[var(--color-muted)] py-4 text-center">No ingested data found.</p>
           ) : (

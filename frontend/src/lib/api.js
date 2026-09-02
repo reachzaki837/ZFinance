@@ -31,6 +31,17 @@ async function apiFetch(path, options = {}) {
   return response.json();
 }
 
+// ── Health check ──────────────────────────────────────────────────────────────
+
+/**
+ * Ping the backend's /health endpoint.
+ * Resolves when the server is reachable, rejects otherwise — the global
+ * backend-unavailable banner polls this.
+ */
+export async function checkHealth() {
+  return apiFetch("/health");
+}
+
 // ── RAG engine endpoints ─────────────────────────────────────────────────────
 
 export async function getNarrative(businessId = BUSINESS_ID, week = CURRENT_WEEK) {

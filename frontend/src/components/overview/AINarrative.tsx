@@ -1,6 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
 import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { getNarrative } from "@/lib/api";
 
@@ -41,18 +43,19 @@ export function AINarrative() {
           >
             <Sparkles size={14} className="text-white" />
           </div>
-          <span className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
+          <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)]">
             This Week's Summary
-          </span>
+          </h2>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={fetchNarrative}
           disabled={loading}
-          className="p-1.5 rounded-lg text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-ink)] transition-colors disabled:opacity-40"
           title="Regenerate summary"
         >
           <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-        </button>
+        </Button>
       </CardHeader>
       <CardContent>
         {loading ? (
@@ -73,7 +76,7 @@ export function AINarrative() {
             </div>
           </div>
         ) : error ? (
-          <p className="text-sm text-[var(--color-danger)]">{error}</p>
+          <ErrorState message={error} onRetry={fetchNarrative} />
         ) : (
           <div className="space-y-3">
             {paragraphs.map((para, i) => (
@@ -89,7 +92,7 @@ export function AINarrative() {
         )}
       </CardContent>
       <CardFooter>
-        <p className="text-[10px] text-[var(--color-muted)] font-[var(--font-body)]">
+        <p className="text-xs text-[var(--color-muted)] font-[var(--font-body)]">
           Generated locally — your data never leaves this machine.
         </p>
       </CardFooter>

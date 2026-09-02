@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Sun, Moon, Menu, Settings as SettingsIcon, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { useStore } from "@/store/useStore";
 import { BUSINESS_ID } from "@/lib/api";
 
@@ -30,12 +31,15 @@ export function TopBar() {
     <header className="h-14 shrink-0 flex items-center justify-between px-4 md:px-6 border-b border-[var(--color-border)] bg-[var(--color-surface)] transition-colors duration-300 z-20">
       {/* Left: mobile menu + logo */}
       <div className="flex items-center gap-3">
-        <button
-          className="md:hidden p-1.5 rounded-lg text-[var(--color-muted)] hover:bg-[var(--color-border)] transition-colors"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="md:hidden"
           onClick={() => setMobileMenu(true)}
+          title="Open menu"
         >
           <Menu size={18} />
-        </button>
+        </Button>
         <span
           className="md:hidden text-base font-bold font-[var(--font-display)] tracking-tight"
           style={{ background: "linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 70%, var(--color-success)))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}
@@ -51,21 +55,28 @@ export function TopBar() {
 
       {/* Right: dark mode + profile dropdown */}
       <div className="flex items-center gap-2 relative" ref={menuRef}>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={toggleDark}
-          className="p-2 rounded-lg text-[var(--color-muted)] hover:bg-[var(--color-border)] hover:text-[var(--color-ink)] transition-all duration-200"
           title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
         >
           {darkMode ? <Sun size={16} /> : <Moon size={16} />}
-        </button>
+        </Button>
 
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setMenuOpen((o) => !o)}
-          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold font-[var(--font-display)] shrink-0 transition-transform hover:scale-105"
-          style={{ background: "linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 60%, var(--color-success)))" }}
+          title="Account menu"
+          className="p-0 w-8 h-8 justify-center rounded-full text-xs font-bold shrink-0 hover:scale-105"
+          style={{
+            background: "linear-gradient(135deg, var(--color-accent), color-mix(in srgb, var(--color-accent) 60%, var(--color-success)))",
+            color: "white",
+          }}
         >
           {initials}
-        </button>
+        </Button>
 
         {menuOpen && (
           <div className="absolute right-0 top-11 w-56 bg-[var(--color-surface)] border border-[var(--color-border)] rounded-xl card-shadow py-2 z-50">
@@ -75,21 +86,23 @@ export function TopBar() {
               </p>
               <p className="text-xs font-[var(--font-mono)] text-[var(--color-muted)]">{BUSINESS_ID}</p>
             </div>
-            <button
+            <Button
+              variant="ghost"
               onClick={() => { setScreen("settings"); setMenuOpen(false); }}
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--color-ink)] hover:bg-[var(--color-border)] transition-colors font-[var(--font-display)]"
+              className="w-full flex justify-start rounded-none gap-2.5 px-4 py-2.5"
             >
               <SettingsIcon size={15} className="text-[var(--color-muted)]" />
               Business Settings
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
               disabled
               title="No authentication configured — this is a single-business local dashboard"
-              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-[var(--color-muted)] opacity-50 cursor-not-allowed font-[var(--font-display)]"
+              className="w-full flex justify-start rounded-none gap-2.5 px-4 py-2.5"
             >
               <LogOut size={15} />
               Sign out
-            </button>
+            </Button>
           </div>
         )}
       </div>
