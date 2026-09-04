@@ -73,15 +73,13 @@ app = FastAPI(
 )
 
 # CORS — allow the frontend to call this backend.
-# IMPORTANT: after deploying the frontend to Vercel, add its real URL here
-# and redeploy the backend — see deployment checklist.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:3000",
         "http://127.0.0.1:5173",
-        # "https://your-app.vercel.app",   # <-- add after first frontend deploy
+        "https://z-finance-flame.vercel.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],
