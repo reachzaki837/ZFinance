@@ -11,28 +11,28 @@
 
 ### 1. Understand your financial health
 
-![ZFinance Overview](docs/screenshots/overview.png)
+![ZFinance Overview](docs\screenshots\Overview.png)
 
 ZFinance summarizes the business's financial health using verified
 financial data and explains the factors affecting the score.
 
 ### 2. Reconcile financial records
 
-![ZFinance Reconciliation](docs/screenshots/reconciliation.png)
+![ZFinance Reconciliation](docs\screenshots\Reconciliation.png)
 
 Upload a ledger and bank statement. ZFinance performs deterministic
 matching first, then uses AI for ambiguous cases.
 
 ### 3. Review unresolved exceptions
 
-![ZFinance Exceptions](docs/screenshots/reconciliation-exceptions.png)
+![ZFinance Exceptions](docs\screenshots\Reconciliation Extension.png)
 
 Unresolved transactions are explicitly surfaced for human review
 instead of being silently force-matched.
 
 ### 4. Ask ZFinance
 
-![Ask ZFinance](docs/screenshots/ask-zfinance.png)
+![Ask ZFinance](docs\screenshots\Ask Zfinance.png)
 
 Ask natural-language questions about the business's financial data.
 Responses are grounded in the ingested transaction history.
