@@ -1,6 +1,6 @@
 # ZFinance
 
-**An AI Finance Controller for SMBs — reconciles financial records, detects anomalies, and explains business financial health in plain language.**
+**An AI Finance Controller for SMBs - reconciles financial records, detects anomalies, and explains business financial health in plain language.**
 
 🔗 **Live app:** https://z-finance-flame.vercel.app
 🔗 **API:** https://zfinance-production.up.railway.app
@@ -10,12 +10,12 @@
 
 ## The problem
 
-Small businesses have financial data — bank statements, ledgers, transaction history — but data isn't the same as understanding. Two specific gaps:
+Small businesses have financial data like bank statements, ledgers, transaction history but data isn't the same as understanding. Two specific gaps:
 
 1. **Reconciliation is manual and error-prone.** Matching internal records against bank statements means catching duplicate payments, missing entries, settlement delays, and split transactions by eye. This doesn't scale past a handful of transactions and genuine mistakes slip through.
 2. **Raw numbers don't explain themselves.** A business owner without a finance background can see "margin dropped 5%" but not *why*, or which transactions actually drove it.
 
-ZFinance addresses both with the same underlying principle: **deterministic code does the calculations, AI explains the results — the AI never invents a number.**
+ZFinance follows a **deterministic-first architecture**: financial arithmetic, matching logic, and anomaly calculations are performed by code. AI is used for ambiguous reconciliation cases and for explaining verified results in plain language.
 
 ---
 
@@ -24,21 +24,25 @@ ZFinance addresses both with the same underlying principle: **deterministic code
 ### Reconciliation engine
 A three-stage pipeline that matches an internal ledger against a bank statement:
 
-1. **Exact match** — deterministic, amount + date + reference ID. No AI involved. Fast, free, handles the obvious majority.
-2. **AI-assisted fuzzy match** — for records that don't exactly match (settlement delays, fee deductions, truncated bank descriptions), an LLM evaluates candidates and only accepts a match above a 0.75 confidence threshold.
-3. **Exception classification** — anything still unmatched gets classified into a specific category (missing from bank, split transaction, duplicate payment, unknown) with plain-English evidence, not silently dropped or force-matched.
+1. **Exact match** - deterministic, amount + date + reference ID. No AI involved. Fast, free, handles the obvious majority.
+2. **AI-assisted fuzzy match** - for records that don't exactly match (settlement delays, fee deductions, truncated bank descriptions), an LLM evaluates candidates and only accepts a match above a 0.75 confidence threshold.
+3. **Exception classification** - anything still unmatched gets classified into a specific category (missing from bank, split transaction, duplicate payment, unknown) with plain-English evidence, not silently dropped or force-matched.
 
 ### AI financial dashboard
-- **Weekly narrative** — plain-English summary of what changed and why, grounded in retrieved transaction data (RAG), not free-generated text
-- **Anomaly detection** — Z-score based, flags category spending that deviates significantly from historical average
-- **Health score** — composite 0–100 score across margin, growth, and stability
-- **Ask ZFinance** — natural-language Q&A grounded in the business's actual ingested data
+- **Weekly narrative** - plain-English summary of what changed and why, grounded in retrieved transaction data (RAG), not free-generated text
+- **Anomaly detection** - Z-score based, flags category spending that deviates significantly from historical average
+- **Health score** - composite 0–100 score across margin, growth, and stability
+- **Ask ZFinance** - natural-language Q&A grounded in the business's actual ingested data
 
 ---
 
 ## Evaluation results
 
 Benchmarked against a 55-record synthetic dataset with 24 labeled ground-truth mismatches across 6 categories (amount discrepancy, date shift, description mismatch, split transaction, missing from bank, duplicate payment). Reproducible via `python benchmark.py`.
+
+> **Important:** These accuracy figures are measured on this specific
+> 55-record synthetic fixture and should not be interpreted as production
+> accuracy. Real-world bank exports have substantially more variability.
 
 | Metric | Result |
 |---|---:|
@@ -54,10 +58,14 @@ Benchmarked against a 55-record synthetic dataset with 24 labeled ground-truth m
 | Duplicate detection accuracy | 100.0% |
 | Runtime (full dataset) | 39.8s |
 
+> **Benchmark note:** Stage 2 and Stage 3 make real Groq API calls, so
+> benchmark runtime and AI-assisted results can vary with model/provider
+> availability and latency.
+
 **Metric definitions:**
-- **Precision / Recall** — positive class is "this record genuinely requires human review" (split transactions, missing-from-bank, duplicate payments). Precision = of everything flagged for review, how much genuinely needed it. Recall = of everything that genuinely needed review, how much was caught.
-- **Exception classification accuracy** — of records correctly flagged for review, how many received the correct exception type label.
-- **Auto-resolution accuracy** — of records with cosmetic noise (fee differences, settlement delays, description truncation), how many were correctly resolved automatically without needlessly escalating to a human.
+- **Precision / Recall** - positive class is "this record genuinely requires human review" (split transactions, missing-from-bank, duplicate payments). Precision of everything flagged for review, how much genuinely needed it. Recall = of everything that genuinely needed review, how much was caught.
+- **Exception classification accuracy** of records correctly flagged for review, how many received the correct exception type label.
+- **Auto-resolution accuracy** of records with cosmetic noise (fee differences, settlement delays, description truncation), how many were correctly resolved automatically without needlessly escalating to a human.
 
 No false positives or false negatives on this benchmark run. Full raw output: [`benchmark_results.json`](backend/benchmark_results.json).
 
@@ -86,15 +94,33 @@ flowchart TB
 
     R3 -.shared retry-wrapped Groq client.- C3
 
-    RAG --> SEED["Auto-seed on startup<br/>(demo data survives redeploys)"]
+    RAG --> SEED["Auto-seed on startup<br/>(demo data is restored if missing)"]
     REC --> SEED
 ```
 
 **Key design decisions:**
 
-- **Deterministic-first, AI-second.** Exact matching, Z-score calculations, and financial arithmetic all run in plain Python — never delegated to the LLM. The LLM is only invoked for genuinely ambiguous cases (fuzzy matching) and for turning verified numbers into natural language (narrative, Q&A). This is why the reconciliation benchmark hits 100% rather than being at the mercy of LLM arithmetic errors.
-- **Honest failure handling.** Every LLM call is wrapped with retry-and-backoff for transient failures (rate limits, network blips) and a graceful, explicit fallback for genuine outages — the system returns `"AI temporarily unavailable"` rather than crashing or fabricating an answer. Verified by [`test_llm_failure.py`](backend/test_llm_failure.py), which deliberately breaks the API key and confirms every code path degrades cleanly.
-- **Self-healing demo data.** The backend auto-seeds its demo dataset on startup if missing, so the live deployment shows real data immediately rather than empty states — regardless of whether the hosting platform's disk survives a restart.
+- **Deterministic-first, AI-second.** Exact matching, Z-score calculations, and financial arithmetic all run in plain Python,never delegated to the LLM. The LLM is only invoked for genuinely ambiguous cases (fuzzy matching) and for turning verified numbers into natural language (narrative, Q&A). Keeping arithmetic and exact matching deterministic removes an important source of LLM error from the reconciliation path. The remaining AI-assisted steps are evaluated separately against labeled ground truth.
+- **Honest failure handling.** Every LLM call is wrapped with retry-and-backoff for transient failures (rate limits, network blips) and a graceful, explicit fallback for genuine outages the system returns `"AI temporarily unavailable"` rather than crashing or fabricating an answer. Verified by [`test_llm_failure.py`](backend/test_llm_failure.py), which deliberately breaks the API key and confirms every code path degrades cleanly.
+- **Self-healing demo data.** The backend auto-seeds its demo dataset on startup if missing, so the live deployment shows real data immediately rather than empty states. The deployed demo can restore its bundled synthetic dataset on startup if local vector data is missing.
+- **Ephemeral demo storage.** The deployed prototype uses local vector storage and startup seeding rather than a persistent production database. Uploaded data should not be treated as durable across redeployments.
+
+## Why AI?
+
+AI is deliberately used only where deterministic rules become insufficient.
+
+| Task | Approach |
+|---|---|
+| Exact transaction matching | Deterministic |
+| Financial arithmetic | Deterministic |
+| Z-score anomaly detection | Deterministic |
+| Ambiguous transaction matching | AI-assisted |
+| Exception classification | AI-assisted |
+| Financial narrative | RAG + AI |
+| Natural-language questions | RAG + AI |
+
+This keeps the system verifiable while using AI where contextual
+reasoning adds value.
 
 ---
 
@@ -144,16 +170,16 @@ Being upfront about what this is and isn't:
 
 - **Synthetic evaluation data.** The 55-record benchmark is a generated fixture with known ground truth, not a live business's real bank export. Real-world data (multi-currency, partial refunds, hundreds of bank export formats) hasn't been tested against.
 - **Single business, no multi-tenancy.** The deployed instance uses one hardcoded `business_id`. No authentication, no user accounts.
-- **Manual CSV upload, no bank feed integration.** No Plaid or direct bank API — data comes from CSV export/import.
+- **Manual CSV upload, no bank feed integration.** No Plaid or direct bank API, data comes from CSV export/import.
 - **No persistent billing or usage limits.** This is a working prototype, not a metered product.
 
 ## Roadmap
 
-- Bank feed integration (Plaid) to replace manual CSV upload
+- Bank-feed integrations to replace manual CSV upload
 - Multi-tenant auth (Clerk) + real user/business accounts (Postgres)
 - Stripe billing with usage-based tiers
 - Validation against real, messy bank export data from multiple banks
-- Evidence-linked UI — click any AI claim to see the exact transactions it's based on
+- Evidence-linked UI - click any AI claim to see the exact transactions it's based on
 
 ---
 
