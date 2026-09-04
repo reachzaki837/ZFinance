@@ -23,6 +23,10 @@ frontend/.vite/
 .vscode/
 .idea/
 
+# Local agent instructions
+CLAUDE.md
+AGENTS.md
+
 # OS files
 .DS_Store
 Thumbs.db
