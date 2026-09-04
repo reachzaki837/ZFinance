@@ -118,7 +118,9 @@ export function HealthScoreGauge() {
       <h2 className="text-sm font-semibold font-[var(--font-display)] text-[var(--color-ink)] mt-3">
         Financial Health Score
       </h2>
-      <p className="text-xs text-[var(--color-muted)] mt-1">{reason}</p>
+      <p className="max-w-2xl px-4 text-center text-sm leading-relaxed text-[var(--color-muted)] mt-1">
+        {reason}
+      </p>
     </div>
   );
 }
