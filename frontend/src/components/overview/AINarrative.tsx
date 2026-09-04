@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Sparkles, RefreshCw } from "lucide-react";
-import { Card, CardHeader, CardContent, CardFooter } from "@/components/ui/Card";
+import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/Skeleton";
@@ -91,11 +91,6 @@ export function AINarrative() {
           </div>
         )}
       </CardContent>
-      <CardFooter>
-        <p className="text-xs text-[var(--color-muted)] font-[var(--font-body)]">
-          Generated locally — your data never leaves this machine.
-        </p>
-      </CardFooter>
     </Card>
   );
 }
