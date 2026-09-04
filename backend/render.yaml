@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: zfinance-api
+    runtime: python
+    region: singapore
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: LLM_PROVIDER
+        value: groq
+      - key: LLM_MODEL
+        value: openai/gpt-oss-20b
+      - key: GROQ_API_KEY
+        sync: false          # set manually in Render dashboard — never commit keys
+      - key: CHROMA_PATH
+        value: ./chroma_db
+      - key: EMBED_MODEL
+        value: all-MiniLM-L6-v2
+      - key: RAG_TOP_K
+        value: "10"
+      - key: ANOMALY_SIGMA
+        value: "2.5"
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+
+# NOTE: No persistent disk configured. main.py auto-seeds the demo dataset
+# on every startup if ChromaDB is empty, so the app self-heals even if
+# Render's disk doesn't survive a restart/redeploy on this plan tier.
