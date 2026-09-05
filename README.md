@@ -106,30 +106,7 @@ No false positives or false negatives on this benchmark run. Full raw output: [`
 
 ## Architecture
 
-```mermaid
-flowchart TB
-    FE["React frontend<br/>(Vercel)"] --> BE["FastAPI backend<br/>(Railway)"]
-
-    BE --> RAG["RAG Engine"]
-    BE --> REC["Reconciliation Engine"]
-
-    subgraph RAG["RAG Engine"]
-        direction TB
-        R1["Chunker + Z-score anomaly detection"] --> R2["ChromaDB vector store"]
-        R2 --> R3["Groq LLM call<br/>(retry + honest fallback)"]
-    end
-
-    subgraph REC["Reconciliation Engine"]
-        direction TB
-        C1["Stage 1: Exact match<br/>(deterministic)"] --> C2["Stage 2: AI fuzzy match<br/>(confidence >= 0.75)"]
-        C2 --> C3["Stage 3: Exception classification"]
-    end
-
-    R3 -.shared retry-wrapped Groq client.- C3
-
-    RAG --> SEED["Auto-seed on startup<br/>(demo data is restored if missing)"]
-    REC --> SEED
-```
+['ARCHITECTURE'](docs/Architecture.png)
 
 **Key design decisions:**
 
