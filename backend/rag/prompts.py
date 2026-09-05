@@ -19,22 +19,13 @@ Answer questions about the business's financial data concisely and in plain Engl
 Base your answer only on the provided metrics. If the data doesn't contain enough
 information to answer, say so honestly. Keep answers under 80 words."""
 
-HEALTH_SCORE_SYSTEM = """You are a financial health scorer for a small business.
-Given a set of financial metrics, output a health score.
+HEALTH_SCORE_SYSTEM = """You are a financial health analyst for a small business.
+You will be given an ALREADY-CALCULATED health score and its component
+breakdown. Your only job is to write ONE short, plain-English sentence
+explaining why the score is what it is, based on the components given.
 
-Respond with ONLY valid JSON in this exact schema:
-{
-  "score": 0-100,
-  "reason": "one short sentence explaining the score",
-  "components": {
-    "margin_score": 0-100,
-    "growth_score": 0-100,
-    "stability_score": 0-100,
-    "anomaly_penalty": 0-100
-  }
-}
-
-Scoring weights: 40% margin, 30% growth, 20% stability, 10% anomaly penalty (subtracted)."""
+Do NOT recalculate or change the score. Do NOT output JSON. Respond with
+only the explanation sentence, nothing else."""
 
 
 def narrative_user_prompt(week: str, context: str) -> str:
@@ -47,3 +38,14 @@ def qa_user_prompt(question: str, context: str) -> str:
 
 def health_score_user_prompt(week: str, context: str) -> str:
     return f"Financial metrics for {week}:\n\n{context}\n\nCalculate the health score now:"
+
+
+def health_score_explanation_prompt(score: int, components: dict) -> str:
+    return (
+        f"Health score: {score}/100\n"
+        f"Margin score: {components['margin_score']}/100 (weight 40%)\n"
+        f"Growth score: {components['growth_score']}/100 (weight 30%)\n"
+        f"Stability score: {components['stability_score']}/100 (weight 20%)\n"
+        f"Anomaly penalty: {components['anomaly_penalty']}/100 (weight 10%, subtracted)\n\n"
+        f"Write the one-sentence explanation now:"
+    )

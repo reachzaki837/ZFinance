@@ -18,7 +18,7 @@ from rag.chunker import build_financial_chunks
 from rag.anomaly import detect_anomalies
 from rag.prompts import (
     NARRATIVE_SYSTEM, QA_SYSTEM, HEALTH_SCORE_SYSTEM,
-    narrative_user_prompt, qa_user_prompt, health_score_user_prompt,
+    narrative_user_prompt, qa_user_prompt, health_score_explanation_prompt,
 )
 
 log = logging.getLogger("zfinance.rag")
@@ -212,26 +212,90 @@ class ZFinanceRAG:
                 "available in the other sections of the dashboard. Please try again shortly."
             )
 
+    def _compute_health_score(self, business_id: str, week: str) -> dict:
+        """
+        Deterministic health score calculation — no LLM involved. Same
+        formula every time for the same underlying data, so refreshing
+        never changes the number. This is the fix for the score varying
+        on every page load: previously the LLM both calculated AND
+        explained the score, which meant the number itself had generation
+        variance. Now Python computes the number; the LLM only writes
+        the one-sentence explanation afterward.
+        """
+        weekly = self.get_weekly_totals(business_id)
+        weeks_sorted = [w for w in weekly if w["week"] <= week]
+        if not weeks_sorted:
+            return None
+
+        current = weeks_sorted[-1]
+        previous = weeks_sorted[-2] if len(weeks_sorted) > 1 else None
+
+        # Margin score: current net margin %, clamped 0-100
+        margin_pct = ((current["revenue"] - current["expenses"]) / current["revenue"] * 100
+                      if current["revenue"] > 0 else 0)
+        margin_score = max(0, min(100, margin_pct + 50))  # centre 0% margin at 50
+
+        # Growth score: revenue growth vs prior week, clamped 0-100, 0% growth = 50 baseline
+        if previous and previous["revenue"] > 0:
+            growth_pct = (current["revenue"] - previous["revenue"]) / previous["revenue"] * 100
+        else:
+            growth_pct = 0
+        growth_score = max(0, min(100, 50 + growth_pct * 2))
+
+        # Stability score: based on margin volatility across up to the last 4 weeks
+        recent = weeks_sorted[-4:]
+        margins = [
+            ((w["revenue"] - w["expenses"]) / w["revenue"] * 100) if w["revenue"] > 0 else 0
+            for w in recent
+        ]
+        if len(margins) > 1:
+            mean_margin = sum(margins) / len(margins)
+            variance = sum((m - mean_margin) ** 2 for m in margins) / len(margins)
+            std_dev = variance ** 0.5
+            stability_score = max(0, min(100, 100 - std_dev * 4))
+        else:
+            stability_score = 75  # not enough history to judge — neutral default
+
+        # Anomaly penalty: count + severity of anomalies for the current week
+        anomalies = self.get_anomalies(business_id, week)
+        penalty = sum(20 if a.get("is_critical") else 10 for a in anomalies)
+        anomaly_penalty = min(100, penalty)
+
+        raw_score = (
+            0.40 * margin_score +
+            0.30 * growth_score +
+            0.20 * stability_score -
+            0.10 * anomaly_penalty
+        )
+        final_score = max(0, min(100, round(raw_score)))
+
+        return {
+            "score": final_score,
+            "components": {
+                "margin_score": round(margin_score),
+                "growth_score": round(growth_score),
+                "stability_score": round(stability_score),
+                "anomaly_penalty": round(anomaly_penalty),
+            },
+        }
+
     def generate_health_score(self, business_id: str, week: str) -> dict:
-        context = self._retrieve(business_id, f"revenue expenses margin growth {week}")
-        if not context:
+        computed = self._compute_health_score(business_id, week)
+        if computed is None:
             return {"score": 0, "reason": "No data available", "components": {}, "ai_unavailable": False}
-        prompt = health_score_user_prompt(week, context)
+
         try:
-            raw = _call_llm(HEALTH_SCORE_SYSTEM, prompt, temperature=0.1, json_mode=True)
+            prompt = health_score_explanation_prompt(computed["score"], computed["components"])
+            reason = _call_llm(HEALTH_SCORE_SYSTEM, prompt, temperature=0.3).strip()
         except Exception as e:
-            log.warning("Health score call failed for %s/%s: %s", business_id, week, e)
-            return {
-                "score": None,
-                "reason": "AI health score is temporarily unavailable — the language model could not be reached.",
-                "components": {},
-                "ai_unavailable": True,
-            }
-        try:
-            return json.loads(raw)
-        except json.JSONDecodeError:
-            log.warning("Health score JSON parse failed: %s", raw[:200])
-            return {"score": 50, "reason": "Could not parse score", "components": {}, "ai_unavailable": False}
+            log.warning("Health score explanation call failed for %s/%s: %s", business_id, week, e)
+            # The score itself is still valid — it was computed in Python,
+            # not by the LLM — so we can return it with a generic reason
+            # rather than failing the whole response.
+            reason = "Score calculated from margin, growth, stability, and anomaly data."
+            return {**computed, "reason": reason, "ai_unavailable": True}
+
+        return {**computed, "reason": reason, "ai_unavailable": False}
 
     def ask(self, business_id: str, question: str, week: str | None = None) -> str:
         query = f"{question} {week or ''}".strip()
