@@ -5,6 +5,63 @@
 🔗 **Live app:** https://z-finance-flame.vercel.app
 🔗 **API:** https://zfinance-production.up.railway.app
 🔗 **API docs:** https://zfinance-production.up.railway.app/docs
+---
+
+## The problem
+
+Small businesses have financial data like bank statements, ledgers, transaction history but data isn't the same as understanding. Two specific gaps:
+
+1. **Reconciliation is manual and error-prone.** Matching internal records against bank statements means catching duplicate payments, missing entries, settlement delays, and split transactions by eye. This doesn't scale past a handful of transactions and genuine mistakes slip through.
+2. **Raw numbers don't explain themselves.** A business owner without a finance background can see "margin dropped 5%" but not *why*, or which transactions actually drove it.
+
+ZFinance follows a **deterministic-first architecture**: financial arithmetic, matching logic, and anomaly calculations are performed by code. AI is used for ambiguous reconciliation cases and for explaining verified results in plain language.
+
+---
+
+## What it does
+
+### Reconciliation engine
+A three-stage pipeline that matches an internal ledger against a bank statement:
+
+1. **Exact match** - deterministic, amount + date + reference ID. No AI involved. Fast, free, handles the obvious majority.
+2. **AI-assisted fuzzy match** - for records that don't exactly match (settlement delays, fee deductions, truncated bank descriptions), an LLM evaluates candidates and only accepts a match above a 0.75 confidence threshold.
+3. **Exception classification** - anything still unmatched gets classified into a specific category (missing from bank, split transaction, duplicate payment, unknown) with plain-English evidence, not silently dropped or force-matched.
+
+### AI financial dashboard
+- **Weekly narrative** - plain-English summary of what changed and why, grounded in retrieved transaction data (RAG), not free-generated text
+- **Anomaly detection** - Z-score based, flags category spending that deviates significantly from historical average
+- **Health score** - composite 0–100 score across margin, growth, and stability
+- **Ask ZFinance** - natural-language Q&A grounded in the business's actual ingested data
+
+---
+
+## Architecture
+
+![ARCHITECTURE](docs/Architecture.png)
+
+**Key design decisions:**
+
+- **Deterministic-first, AI-second.** Exact matching, Z-score calculations, and financial arithmetic all run in plain Python,never delegated to the LLM. The LLM is only invoked for genuinely ambiguous cases (fuzzy matching) and for turning verified numbers into natural language (narrative, Q&A). Keeping arithmetic and exact matching deterministic removes an important source of LLM error from the reconciliation path. The remaining AI-assisted steps are evaluated separately against labeled ground truth.
+- **Honest failure handling.** Every LLM call is wrapped with retry-and-backoff for transient failures (rate limits, network blips) and a graceful, explicit fallback for genuine outages the system returns `"AI temporarily unavailable"` rather than crashing or fabricating an answer. Verified by [`test_llm_failure.py`](backend/test_llm_failure.py), which deliberately breaks the API key and confirms every code path degrades cleanly.
+- **Self-healing demo data.** The backend auto-seeds its demo dataset on startup if missing, so the live deployment shows real data immediately rather than empty states. The deployed demo can restore its bundled synthetic dataset on startup if local vector data is missing.
+- **Ephemeral demo storage.** The deployed prototype uses local vector storage and startup seeding rather than a persistent production database. Uploaded data should not be treated as durable across redeployments.
+
+## Why AI?
+
+AI is deliberately used only where deterministic rules become insufficient.
+
+| Task | Approach |
+|---|---|
+| Exact transaction matching | Deterministic |
+| Financial arithmetic | Deterministic |
+| Z-score anomaly detection | Deterministic |
+| Ambiguous transaction matching | AI-assisted |
+| Exception classification | AI-assisted |
+| Financial narrative | RAG + AI |
+| Natural-language questions | RAG + AI |
+
+This keeps the system verifiable while using AI where contextual
+reasoning adds value.
 
 ---
 ## Demo
@@ -41,34 +98,6 @@ Responses are grounded in the ingested transaction history.
 
 ---
 
-## The problem
-
-Small businesses have financial data like bank statements, ledgers, transaction history but data isn't the same as understanding. Two specific gaps:
-
-1. **Reconciliation is manual and error-prone.** Matching internal records against bank statements means catching duplicate payments, missing entries, settlement delays, and split transactions by eye. This doesn't scale past a handful of transactions and genuine mistakes slip through.
-2. **Raw numbers don't explain themselves.** A business owner without a finance background can see "margin dropped 5%" but not *why*, or which transactions actually drove it.
-
-ZFinance follows a **deterministic-first architecture**: financial arithmetic, matching logic, and anomaly calculations are performed by code. AI is used for ambiguous reconciliation cases and for explaining verified results in plain language.
-
----
-
-## What it does
-
-### Reconciliation engine
-A three-stage pipeline that matches an internal ledger against a bank statement:
-
-1. **Exact match** - deterministic, amount + date + reference ID. No AI involved. Fast, free, handles the obvious majority.
-2. **AI-assisted fuzzy match** - for records that don't exactly match (settlement delays, fee deductions, truncated bank descriptions), an LLM evaluates candidates and only accepts a match above a 0.75 confidence threshold.
-3. **Exception classification** - anything still unmatched gets classified into a specific category (missing from bank, split transaction, duplicate payment, unknown) with plain-English evidence, not silently dropped or force-matched.
-
-### AI financial dashboard
-- **Weekly narrative** - plain-English summary of what changed and why, grounded in retrieved transaction data (RAG), not free-generated text
-- **Anomaly detection** - Z-score based, flags category spending that deviates significantly from historical average
-- **Health score** - composite 0–100 score across margin, growth, and stability
-- **Ask ZFinance** - natural-language Q&A grounded in the business's actual ingested data
-
----
-
 ## Evaluation results
 
 Benchmarked against a 55-record synthetic dataset with 24 labeled ground-truth mismatches across 6 categories (amount discrepancy, date shift, description mismatch, split transaction, missing from bank, duplicate payment). Reproducible via `python benchmark.py`.
@@ -101,36 +130,6 @@ Benchmarked against a 55-record synthetic dataset with 24 labeled ground-truth m
 - **Auto-resolution accuracy** of records with cosmetic noise (fee differences, settlement delays, description truncation), how many were correctly resolved automatically without needlessly escalating to a human.
 
 No false positives or false negatives on this benchmark run. Full raw output: [`benchmark_results.json`](backend/benchmark_results.json).
-
----
-
-## Architecture
-
-![ARCHITECTURE](docs/Architecture.png)
-
-**Key design decisions:**
-
-- **Deterministic-first, AI-second.** Exact matching, Z-score calculations, and financial arithmetic all run in plain Python,never delegated to the LLM. The LLM is only invoked for genuinely ambiguous cases (fuzzy matching) and for turning verified numbers into natural language (narrative, Q&A). Keeping arithmetic and exact matching deterministic removes an important source of LLM error from the reconciliation path. The remaining AI-assisted steps are evaluated separately against labeled ground truth.
-- **Honest failure handling.** Every LLM call is wrapped with retry-and-backoff for transient failures (rate limits, network blips) and a graceful, explicit fallback for genuine outages the system returns `"AI temporarily unavailable"` rather than crashing or fabricating an answer. Verified by [`test_llm_failure.py`](backend/test_llm_failure.py), which deliberately breaks the API key and confirms every code path degrades cleanly.
-- **Self-healing demo data.** The backend auto-seeds its demo dataset on startup if missing, so the live deployment shows real data immediately rather than empty states. The deployed demo can restore its bundled synthetic dataset on startup if local vector data is missing.
-- **Ephemeral demo storage.** The deployed prototype uses local vector storage and startup seeding rather than a persistent production database. Uploaded data should not be treated as durable across redeployments.
-
-## Why AI?
-
-AI is deliberately used only where deterministic rules become insufficient.
-
-| Task | Approach |
-|---|---|
-| Exact transaction matching | Deterministic |
-| Financial arithmetic | Deterministic |
-| Z-score anomaly detection | Deterministic |
-| Ambiguous transaction matching | AI-assisted |
-| Exception classification | AI-assisted |
-| Financial narrative | RAG + AI |
-| Natural-language questions | RAG + AI |
-
-This keeps the system verifiable while using AI where contextual
-reasoning adds value.
 
 ---
 
