@@ -106,7 +106,7 @@ No false positives or false negatives on this benchmark run. Full raw output: [`
 
 ## Architecture
 
-['ARCHITECTURE'](docs/Architecture.png)
+![ARCHITECTURE](docs/Architecture.png)
 
 **Key design decisions:**
 
